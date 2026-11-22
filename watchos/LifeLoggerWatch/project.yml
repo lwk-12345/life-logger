@@ -1,0 +1,73 @@
+name: LifeLoggerWatch
+options:
+  bundleIdPrefix: com.lifelogger
+  deploymentTarget:
+    watchOS: "10.0"
+  createIntermediateGroups: true
+
+targets:
+  LifeLoggerWatch:
+    type: application
+    platform: watchOS
+    sources:
+      - path: App/LifeLoggerWatchApp.swift
+      - path: App/RecorderHomeView.swift
+      - path: App/WatchRecordingCoordinator.swift
+      - path: App/WatchMeterModel.swift
+      - path: App/WatchNowPlayingSession.swift
+      - path: App/MacSyncSettingsView.swift
+      - path: App/MacWatchSessionTransport.swift
+      - path: App/WatchCompletionQueue.swift
+      - path: App/WatchCaptureEventLog.swift
+      - path: App/WatchContinuousAudioCapture.swift
+      - path: App/WatchHealthSnapshotManager.swift
+      - path: App/WatchLocationSnapshotManager.swift
+      - path: CorePackage/Sources/WatchCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lifelogger.watch
+        # 【2026-10-15 修】HealthKit 能力必须在签名层声明，否则 watchOS 沙箱会拦掉
+        # HKHealthStore.requestAuthorization()，心率/步数永远拿不到（实测 7699 分段 0 条）。
+        CODE_SIGN_ENTITLEMENTS: App/LifeLoggerWatch.entitlements
+        PRODUCT_NAME: LifeLoggerWatch
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: "YOUR_APPLE_TEAM_ID"
+        SDKROOT: watchos
+        SUPPORTED_PLATFORMS: "watchos watchsimulator"
+        WATCHOS_DEPLOYMENT_TARGET: "10.0"
+        TARGETED_DEVICE_FAMILY: "4"
+        SWIFT_VERSION: "6.0"
+    info:
+      path: App/WatchAppInfo.plist
+      properties:
+        CFBundleDisplayName: Life Logger
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "68"
+        CFBundleURLTypes:
+          - CFBundleURLName: com.lifelogger.watch
+            CFBundleURLSchemes:
+              - lifelogger
+        WKApplication: YES
+        WKWatchOnly: YES
+        NSMicrophoneUsageDescription: Life Logger records audio only when you start a recording.
+        NSLocationWhenInUseUsageDescription: 用于判断所处场景，不跟踪轨迹
+        NSLocalNetworkUsageDescription: Life Logger checks the trusted Mac address and syncs Watch recordings when reachable.
+        NSBonjourServices:
+          - _lifelogger._tcp
+        NSHealthShareUsageDescription: "Life Logger 同步心率、步数和睡眠数据，用于生成身心健康与多模态生活记录。"
+        NSHealthUpdateUsageDescription: Life Logger 读取健康数据用于生活记录。
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: YES
+          NSAllowsArbitraryLoads: YES
+        UIBackgroundModes:
+          - audio
+        WKBackgroundModes:
+          - physical-therapy
+
+schemes:
+  LifeLoggerWatch:
+    build:
+      targets:
+        LifeLoggerWatch: all
+    run:
+      config: Debug

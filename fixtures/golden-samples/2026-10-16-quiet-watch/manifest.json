@@ -1,0 +1,73 @@
+{
+  "channels": 1,
+  "codec": "m4a-aac",
+  "completion_job_id": "job-20261016-202353-80c8766f",
+  "device_id": "watch-example-device-0001",
+  "ended_at": "2026-10-16T12:22:43.961000+00:00",
+  "expected_segments": 2,
+  "job_id": "job-20261016-202353-80c8766f",
+  "location": {
+    "horizontal_accuracy": 35.0,
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "source": "significant_change",
+    "timestamp": "2026-10-16T20:21:08+08:00"
+  },
+  "network_snapshot": {
+    "ambient_location": "Transit"
+  },
+  "recording_bytes": 410114,
+  "recording_file": "recording.m4a",
+  "recording_sha256": "sha256:59222d147b182d0be0c0e776429ca6a5aa74d0050f0f9947003bc7496a09f86d",
+  "sample_rate": 16000,
+  "schema_version": "watch-session-v1",
+  "segments": [
+    {
+      "battery_snapshot": {
+        "level_percent": 40,
+        "state": "unplugged"
+      },
+      "duration_ms": 60097,
+      "file": "segment-000000.m4a",
+      "health_snapshot": {
+        "heart_rate_bpm": 76.0,
+        "step_count": 1524
+      },
+      "location": {
+        "horizontal_accuracy": 35.0,
+        "latitude": 37.7749,
+        "longitude": -122.4194,
+        "source": "significant_change",
+        "timestamp": "2026-10-16T20:21:08+08:00"
+      },
+      "received_at": "2026-10-16T20:23:52.522649+08:00",
+      "sequence": 0,
+      "sha256": "sha256:9be41a063e9ab58e7a44ddf1106eafb26bdef723918a74d0e058773fc57414a5",
+      "size_bytes": 263149,
+      "start_offset_ms": 0
+    },
+    {
+      "battery_snapshot": {
+        "level_percent": 40,
+        "state": "unplugged"
+      },
+      "duration_ms": 41296,
+      "file": "segment-000001.m4a",
+      "health_snapshot": {
+        "heart_rate_bpm": 76.0,
+        "step_count": 1524
+      },
+      "received_at": "2026-10-16T20:23:52.916801+08:00",
+      "sequence": 1,
+      "sha256": "sha256:b3134d839503816b39ab349a7738980482665d36416fc8e8bd63332f9ecaf2d3",
+      "size_bytes": 188961,
+      "start_offset_ms": 60097
+    }
+  ],
+  "session_id": "10546AFB006A43CC8EDB3493BF1C69B4",
+  "started_at": "2026-10-16T12:21:02.568000+00:00",
+  "state": "complete",
+  "total_bytes": 452110,
+  "total_duration_ms": 101393,
+  "updated_at": "2026-10-16T20:25:10.915813+08:00"
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Life Logger</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.lifelogger.watch</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lifelogger</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>68</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_lifelogger._tcp</string>
+	</array>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Life Logger 同步心率、步数和睡眠数据，用于生成身心健康与多模态生活记录。</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Life Logger 读取健康数据用于生活记录。</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Life Logger checks the trusted Mac address and syncs Watch recordings when reachable.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>用于判断所处场景，不跟踪轨迹</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Life Logger records audio only when you start a recording.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<key>WKApplication</key>
+	<true/>
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>physical-therapy</string>
+	</array>
+	<key>WKWatchOnly</key>
+	<true/>
+</dict>
+</plist>

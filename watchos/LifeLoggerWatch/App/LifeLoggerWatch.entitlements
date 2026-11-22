@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 【2026-10-15 修】HealthKit 能力声明。
+	     为什么必须有：watchOS 的安全沙箱会在**签名层**拦截未声明该 entitlement 的 App 调用
+	     HKHealthStore.requestAuthorization() —— 调用会被直接打回，回调里的 success 也拿不到
+	     有效授权，于是 WatchHealthSnapshotManager.isAuthorized 永远为 false，
+	     captureSnapshot() 每次都判定「未授权」静默返回 nil。
+	     症状：分段上报的 health_snapshot 恒为空。
+	     （此前项目只配了 NSHealthShareUsageDescription 文案，从未配过 entitlements 文件，
+	       打包产物的签名权限树里只有 application-identifier / team-identifier / get-task-allow。） -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+</dict>
+</plist>

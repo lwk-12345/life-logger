@@ -1,0 +1,2525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Life Logger · 瀑布图 v2</title>
+<style>
+:root{
+  --blue:#002fa7;--blue-soft:#eef2fb;--ink:#20232b;--ink-2:#4b515c;--muted:#848b97;
+  --line:#e1e5ed;--line-2:#eef0f4;--paper:#fff;--wash:#f8f9fb;
+  --capture:#218377;--amber:#a06b26;--coral:#c4513f;--plum:#8a4f86;
+  --serif:"Songti SC","Noto Serif SC",STSong,serif;
+  --display:Didot,"Bodoni 72","Songti SC",serif;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:clip}
+body{overflow-x:clip;margin:0;background:var(--paper);color:var(--ink);font:15px/1.6 var(--sans)}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:3px}
+.wrap{max-width:1520px;margin:0 auto;padding:24px 20px 72px}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* 刊头 */
+.mast{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:18px;border-bottom:1px solid var(--line)}
+.mast h1{margin:0;font:400 38px/1.15 var(--serif);color:var(--blue);letter-spacing:.01em}
+.mast .sub{margin-top:6px;color:var(--muted);font-size:13px}
+.daynav{display:flex;align-items:center;gap:4px;color:var(--ink-2);font-size:13px}
+.daynav button{min-width:44px;min-height:44px;padding:0 10px;border-radius:6px}
+.daynav button:hover{background:var(--wash)}
+.daynav button[disabled]{opacity:.3;cursor:default}
+
+/* 三个时刻 */
+.overview{position:relative;border-bottom:1px solid var(--line)}
+.clocks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0}
+.clock .unit{font:400 14px/1 var(--sans);color:var(--muted)}
+.f-macros{color:var(--ink-2)!important}
+.f-why{color:var(--amber)!important}
+.f-meal{color:var(--muted)}
+.f-pending{color:var(--amber);font-weight:400}
+.f-goal{display:grid;gap:5px;margin-top:6px;padding:7px 9px;border:1px solid var(--line-2);border-radius:6px;background:var(--wash);font:12px/1.45 var(--sans);color:var(--ink-2)}
+.f-goal-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px}
+.f-goal-mode{font-weight:600;color:var(--ink)}
+.f-goal-bars{display:grid;gap:4px}
+.f-goal-row{display:grid;grid-template-columns:36px 56px minmax(0,1fr);align-items:center;gap:6px;font-size:11.5px}
+.f-goal-track{height:6px;border-radius:3px;background:var(--line-2);overflow:hidden}
+.f-goal-fill{display:block;height:100%;border-radius:3px;background:var(--blue)}
+.f-goal-fill.ok{background:var(--capture)}
+.f-goal-fill.gap{background:var(--amber)}
+.f-goal-fill.warn{background:var(--coral)}
+.f-goal-ok{color:var(--capture);font-weight:500}
+.f-goal-gap{color:var(--amber)}
+.f-goal-warn{color:var(--coral);font-weight:500}
+.f-goal-kcal{color:var(--ink-2)}
+.f-mode-chips{display:flex;flex-wrap:wrap;gap:6px}
+.f-mode-chip{min-height:28px;padding:2px 10px;border:1px solid var(--line);border-radius:14px;background:var(--paper);color:var(--ink-2);font:12px/1.4 var(--sans);cursor:pointer}
+.f-mode-chip[aria-pressed=true]{border-color:var(--blue);background:var(--blue-soft);color:var(--blue);font-weight:500}
+.f-action{margin-top:6px;min-height:32px;padding:4px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--blue);font:12px/1.4 var(--sans);cursor:pointer;text-align:left}
+.f-action:hover{border-color:var(--blue)}
+.f-action.subtle{color:var(--muted);border-style:dashed}
+.f-action.subtle:hover{color:var(--blue);border-style:solid}
+.f-sup-panel{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--wash);display:grid;gap:10px}
+.f-sup-panel[hidden]{display:none}
+.f-sup-item{padding-top:8px;border-top:1px dashed var(--line);display:grid;gap:6px}
+.f-sup-item:first-child{padding-top:0;border-top:0}
+.f-sup-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px;font:13px/1.4 var(--sans)}
+.f-sup-head b{font-weight:600;color:var(--ink)}
+.f-sup-tag{font:11.5px/1.4 var(--sans);color:var(--muted)}
+.f-sup-quote{font:11.5px/1.45 var(--sans);color:var(--muted);padding-left:8px;border-left:2px solid var(--line)}
+.f-sup-controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.f-sup-inputs{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
+.f-sup-field{display:inline-flex;align-items:center;gap:4px;font:12px/1.4 var(--sans);color:var(--ink-2)}
+.f-sup-field input{width:76px;min-height:30px;padding:2px 6px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink);font:12px/1.4 var(--sans)}
+.f-sup-field input.kcal{width:88px}
+.f-sup-btn{min-height:30px;padding:3px 10px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink-2);font:12px/1.4 var(--sans);cursor:pointer}
+.f-sup-btn.primary{border-color:var(--blue);color:var(--blue);font-weight:500}
+.f-sup-btn.primary:hover{background:var(--blue-soft)}
+.f-sup-btn.skip{color:var(--muted)}
+.f-sup-btn.skip:hover{color:var(--coral);border-color:var(--coral)}
+.f-sup-label-box{margin-top:4px;padding:8px 10px;border:1px dashed var(--line);border-radius:6px;background:var(--paper);display:grid;gap:6px}
+.f-sup-label-box[hidden]{display:none}
+.f-sup-label-title{font:11.5px/1.4 var(--sans);color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+.f-sup-label-grid{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.f-sup-label-grid .f-sup-field input{width:64px}
+.f-sup-label-grid select{min-height:30px;padding:2px 4px;border:1px solid var(--line);border-radius:5px;background:var(--paper);color:var(--ink);font:12px/1.4 var(--sans)}
+.f-sup-notice{font:12px/1.4 var(--sans);color:var(--blue)}
+.ov-meta{margin:0;padding:6px 0 10px;font:12px/1.6 var(--sans);color:var(--muted)}
+.ov-meta b{font-weight:500;color:var(--ink-2)}
+.ov-badge{position:absolute;top:6px;right:0;padding:1px 8px;border:1px solid var(--line);border-radius:10px;font:11px/1.6 var(--sans);color:var(--muted);background:var(--paper)}
+.clock{padding:16px 18px 14px 0}
+.clock+.clock{padding-left:18px;border-left:1px solid var(--line)}
+.clock dt{font-size:12px;color:var(--muted)}
+.clock dd{margin:2px 0 0;font:400 32px/1.15 var(--display)}
+.clock small{display:block;font:12px/1.5 var(--sans);color:var(--muted);margin-top:3px}
+.clock.cap dd{color:var(--capture)}
+/* 三大营养素：单独占一整行（4 格下面是满行，2 格手机上也跨两列），不挤那四个时间格 */
+.clock.macros{grid-column:1/-1;border-left:0;padding-left:0;border-top:1px solid var(--line)}
+.macros-dd{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;font:400 20px/1.35 var(--display);max-width:100%}
+.macros-dd span{white-space:nowrap}
+.macros-dd b{font-weight:500}
+.macros-warn{font:12px/1.6 var(--sans);color:#a06b26}
+.macros-foods{margin-top:6px;font:13px/1.6 var(--sans);color:var(--ink-2)}
+.macros-foods b{font-weight:500;color:var(--ink)}
+.macros-why{margin-top:2px;font:12px/1.6 var(--sans);color:var(--amber)}
+.macros-meals{margin-top:6px;max-width:100%}
+.macros-meals summary{cursor:pointer;font:12px/1.7 var(--sans);color:var(--muted)}
+.macros-meals ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:2px}
+.macros-meals li{font:12px/1.7 var(--sans);color:var(--ink-2,#3d434d);display:flex;flex-wrap:wrap;gap:0 10px;max-width:100%}
+.macros-meals .m-name{color:var(--muted);min-width:2.6em}
+.macros-meals .m-foods{color:var(--ink-2)}
+@media (max-width:640px){
+  .macros-dd{font-size:15px;gap:2px 12px}
+  .macros-meals li{font-size:11.5px}
+}
+.clock.proc dd{color:var(--blue)}
+.spend-link{display:block;width:100%;min-height:44px;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.spend-link:hover small{color:var(--blue)}
+.spend-items{list-style:none;margin:6px 0 0;padding:6px 0 0;border-top:1px dashed var(--line);display:grid;gap:4px;font:12px/1.55 var(--sans);color:var(--ink-2)}
+.spend-items li{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.spend-items .s-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.spend-items b{font-weight:500;color:var(--ink);white-space:nowrap}
+.s-amt-group{display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
+.s-amt-btn{cursor:pointer;padding:1px 4px;border-radius:3px;border-bottom:1px dashed var(--line);transition:background .12s,color .12s}
+.s-amt-btn:hover{background:var(--line-2);color:var(--blue);border-bottom-color:var(--blue)}
+.s-edited-tag{font-size:11px;color:var(--muted);background:var(--line-2);padding:0 4px;border-radius:3px;cursor:help;white-space:nowrap}
+.s-undo-btn{border:1px solid var(--line);background:#fff;color:var(--muted);font:11px/1.3 var(--sans);padding:1px 5px;border-radius:3px;cursor:pointer;white-space:nowrap}
+.s-undo-btn:hover{color:var(--blue);border-color:var(--blue)}
+.s-amt-input{width:72px;font:12px/1.4 var(--mono);padding:1px 4px;border:1px solid var(--blue);border-radius:3px;text-align:right;color:var(--ink);background:#fff}
+.spend-unmatched{margin-top:6px;padding-top:6px;border-top:1px dashed var(--line);font:12px/1.5 var(--sans)}
+.spend-unmatched-summary{cursor:pointer;color:#a06b26;font-weight:500}
+.spend-unmatched-list{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:4px}
+.spend-unmatched-item{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--line-2);padding:3px 6px;border-radius:4px;color:var(--ink-2)}
+.s-unmatched-info{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-unmatched-quote{color:var(--muted);font-size:11px}
+.s-edit-notice{margin-top:4px;font:11px/1.4 var(--sans);color:#c4513f}
+.f-sup-title-wrap{display:inline-flex;flex-wrap:wrap;align-items:center;gap:5px;min-width:0}
+.f-rename-btn{border:1px solid var(--line);background:#fff;color:var(--muted);font:11px/1.3 var(--sans);padding:1px 5px;border-radius:3px;cursor:pointer;white-space:nowrap}
+.f-rename-btn:hover{color:var(--blue);border-color:var(--blue);background:var(--blue-soft)}
+.f-rename-input{width:142px;max-width:100%;font:12px/1.4 var(--sans);padding:1px 6px;border:1px solid var(--blue);border-radius:4px;color:var(--ink);background:#fff}
+.clock.food .spend-items .s-name{white-space:normal;overflow:visible;text-overflow:clip;display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px 5px}
+.f-item-entry{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+
+/* 全天色带 */
+.ribbon{margin:22px 0 6px}
+.ribbon-scroll{position:relative;height:56px}
+.r-rec,.r-scene{position:absolute;left:0;right:0;background:var(--line-2)}
+.r-rec{top:0;height:5px;border-radius:3px;overflow:hidden}
+.r-scene{top:10px;height:24px;border-radius:3px;overflow:hidden}
+.r-rec i,.r-scene button{position:absolute;top:0;bottom:0;display:block}
+.r-rec i{background:var(--capture)}
+.r-scene button{border-right:1px solid #fff;transition:filter .12s}
+.r-scene button:hover{filter:brightness(1.12)}
+.r-tick{position:absolute;top:38px;font-size:11px;color:var(--muted);transform:translateX(-50%)}
+.r-tick:first-of-type{transform:none}
+.r-tick:last-of-type{transform:translateX(-100%)}
+.r-now{position:absolute;top:-3px;height:41px;width:2px;background:var(--ink)}
+.r-proc{position:absolute;top:-3px;height:41px;width:2px;background:var(--blue)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:var(--muted)}
+.legend b{font-weight:400;color:var(--ink-2)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+
+/* 筛选 */
+.filters{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:0 22px;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);margin-top:16px;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:none;min-height:44px;color:var(--muted);font-size:14px;border-bottom:2px solid transparent}
+.filters button[aria-pressed=true]{color:var(--blue);border-color:var(--blue)}
+.filters span{margin-left:4px;font-size:12px}
+
+/* 叙事主体 */
+.scene{display:grid;grid-template-columns:132px 28px minmax(0,1fr);scroll-margin-top:56px}
+.s-time{padding:20px 8px 0 0;text-align:right;color:var(--muted);font-size:14px;line-height:1.35;white-space:nowrap}
+.hour{display:grid;grid-template-columns:52px 4px 5px minmax(0,1fr);gap:0 7px;min-height:56px;border-top:1px solid var(--line-2);scroll-margin-top:56px}
+.hour.quiet{min-height:38px}
+.hour.current .h-time{color:var(--blue);font-weight:600}
+.h-time{padding-top:12px;font-size:13px;color:var(--muted);text-align:right}
+.hour.quiet .h-time{padding-top:8px;font-size:12px;color:#9ea5b0}
+.h-track{position:relative;background:var(--wash);overflow:hidden;border-radius:2px}
+.h-track i{position:absolute;left:0;right:0;border-radius:2px}
+.h-rec{background:var(--capture)}
+.h-body{min-width:0;padding:8px 0 10px 6px}
+.hour.quiet .h-body{padding:4px 0 4px 6px}
+.h-scene{font-size:12px;color:var(--muted);min-height:18px}
+.h-gap{padding:8px 0 8px 64px;font-size:12px;color:var(--muted);border-top:1px solid var(--line-2)}
+.fold.noise{display:inline-flex;align-items:center;margin-top:6px;min-height:30px;padding:3px 10px;border:0;border-radius:6px;background:var(--wash);width:auto;font-size:12px;color:var(--muted)}
+.hour.quiet .fold.noise{margin-top:0}
+.fold.noise:hover{background:var(--blue-soft);color:var(--blue)}
+.badge.app{color:var(--muted);border:0;padding:0 2px;font-size:12px}
+.a-card{margin-top:10px;border:1px solid var(--line);border-left:3px solid var(--card);border-radius:8px;background:var(--paper);overflow:hidden}
+.a-card-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--line-2);font-size:13px}
+.a-card-head strong{font-weight:600;color:var(--ink)}
+.a-card-head .count{margin-left:auto;font-size:12px;color:var(--muted)}
+.a-card .row:first-child{border-top:0}
+.a-card .fold{margin:0;padding:8px 12px;width:100%;text-align:left}
+.s-time small{display:block;font-size:12px;margin-top:3px}
+.s-spine{position:relative}
+.s-spine::before{content:"";position:absolute;left:13px;top:0;bottom:0;width:1px;background:var(--line)}
+.s-spine i{position:absolute;left:8px;top:26px;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--dot,var(--muted))}
+.s-body{min-width:0;padding:14px 0 12px;border-top:1px solid var(--line)}
+.scene:first-child .s-body{border-top:0}
+.s-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.s-head h2{margin:0;font:400 23px/1.35 var(--serif);color:var(--ink)}
+.s-head .place{font-size:12px;color:var(--muted)}
+.health-strip{display:flex;flex-wrap:wrap;gap:4px 18px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.health-strip b{font-weight:500;color:var(--ink)}
+.s-head .count{margin-left:auto;font-size:12px;color:var(--muted)}
+.scene.current .s-time{color:var(--blue)}
+.scene.current h2{color:var(--blue)}
+.scene.current .s-spine i{background:#fff;border-color:var(--blue)}
+.scene.quiet h2{font-size:17px;color:var(--ink-2)}
+
+/* 活动行 */
+.rows{list-style:none;margin:8px 0 0;padding:0}
+.digest-time{margin:4px 0 0;color:var(--muted,#667085);font-size:13px}
+.digest-details{list-style:none;margin:8px 0;padding:0;display:grid;gap:4px;font-size:14px}
+.digest-details li{display:flex;flex-wrap:wrap;gap:2px 10px;min-width:0}
+.digest-details span{color:var(--muted,#667085)}
+.row{border-top:1px solid var(--line-2)}
+.row:first-child{border-top:0}
+.row>button{display:grid;grid-template-columns:46px 8px minmax(0,1fr) auto;align-items:baseline;gap:0 10px;width:100%;min-height:44px;padding:10px 4px;text-align:left}
+.row>button:hover{background:var(--wash)}
+.r-clock{font-size:13px;color:var(--muted)}
+.r-clock.spoken{color:#aab0ba;text-decoration:underline dotted #c5cad2;text-underline-offset:3px}
+.legend .spoken-key{text-decoration:underline dotted #c5cad2;text-underline-offset:3px}
+.dot{width:8px;height:8px;border-radius:50%;align-self:center;background:var(--muted)}
+.r-title{font-weight:500;line-height:1.5}
+.r-note{display:block;margin-top:1px;font-weight:400;font-size:12px;color:var(--muted)}
+.r-tail{font-size:12px;color:var(--muted);white-space:nowrap;padding-left:8px}
+.r-tail .money{color:var(--amber)}
+.r-tail .money.confirmed{color:var(--capture);font-weight:500}
+.r-fold{color:var(--muted);font-size:12px;margin-left:6px}
+.row[data-life=media] .r-title,.row[data-life=unknown] .r-title{font-weight:400;color:var(--ink-2)}
+.detail{padding:4px 4px 14px 74px;font-size:14px;color:var(--ink-2)}
+.detail p{margin:0 0 8px}
+.detail h4{margin:12px 0 4px;font-size:12px;font-weight:500;color:var(--muted)}
+.detail ul{list-style:none;margin:0;padding:0}
+.detail li{padding:3px 0}
+.detail blockquote{margin:3px 0 3px;padding-left:10px;border-left:2px solid var(--line);color:var(--muted);font-size:13px}
+.detail .st{color:var(--muted);font-size:12px;margin-left:6px}
+.fold{display:block;width:100%;min-height:44px;padding:8px 4px 8px 74px;text-align:left;color:var(--muted);font-size:13px;border-top:1px solid var(--line-2)}
+.fold:hover{color:var(--blue)}
+
+.gap{display:grid;grid-template-columns:118px 28px minmax(0,1fr)}
+.gap div:first-child{text-align:right;padding:7px 8px 7px 0;font-size:12px;color:var(--muted)}
+.gap .s-spine::before{background:repeating-linear-gradient(var(--line) 0 3px,transparent 3px 7px)}
+.gap div:last-child{padding:7px 0;font-size:12px;color:var(--muted)}
+.gap-t{display:none}
+.cursor{display:grid;grid-template-columns:118px 28px minmax(0,1fr);align-items:center;font-size:13px}
+.cursor div:first-child{text-align:right;padding-right:8px}
+.cursor .s-spine{height:34px}
+.cursor .s-spine::after{content:"";position:absolute;left:8px;top:12px;width:11px;height:11px;border-radius:50%;background:var(--c)}
+.cursor div:last-child{border-top:1px solid var(--c);padding-top:4px;margin-top:4px}
+.cursor{--c:var(--ink);color:var(--c)}
+.cursor.proc{--c:var(--blue)}
+
+.badge{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid var(--line);border-radius:3px;font-size:11px;font-weight:400;color:var(--ink-2);line-height:18px;white-space:nowrap}
+.badge.fixed{border-color:var(--blue);color:var(--blue)}
+.cats{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0 2px}
+.cats::-webkit-scrollbar{display:none}
+.cats button{flex:none;min-height:32px;padding:0 10px;border:1px solid var(--line);border-radius:16px;font-size:12px;color:var(--ink-2)}
+.cats button[aria-pressed=true]{border-color:var(--blue);color:var(--blue)}
+.others{margin-top:6px;font-size:13px;color:var(--muted)}
+.others summary{cursor:pointer;min-height:32px;display:flex;align-items:center}
+.others li{color:var(--muted)}
+.paid-note{color:var(--muted);font-size:12px;margin-left:4px}
+.section{margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+.section>h3{margin:0 0 8px;font:400 19px/1.4 var(--serif);color:var(--ink)}
+.section details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--ink-2);font-size:14px}
+.section ul{list-style:none;margin:0;padding:0}
+.section li{padding:6px 0;border-top:1px solid var(--line-2);font-size:14px;color:var(--ink-2)}
+.section li small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+.brief-lines{margin:0;font-size:14px;color:var(--ink-2);white-space:pre-line}
+.group-note,.warn-note{display:block;margin-top:2px;font-size:12px;color:var(--amber)}
+.tools{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:10px;font-size:12px;color:var(--muted)}
+.tools button{min-height:32px;color:var(--blue);font-size:12px}
+.notice.alert{color:var(--coral)}
+html.embedded body{background:transparent}
+html.embedded .wrap{padding:0 0 24px;max-width:none}
+html.embedded .mast{display:none}
+html.embedded .filters{position:static;backdrop-filter:none}
+.state{margin:48px auto;max-width:460px;text-align:center;color:var(--ink-2)}
+.state h2{font:400 24px var(--serif);margin:0 0 8px;color:var(--ink)}
+.state.err h2{color:var(--coral)}
+.state button{margin-top:14px;min-height:44px;padding:0 18px;border:1px solid var(--blue);border-radius:6px;color:var(--blue)}
+.notice{margin:14px 0 0;padding:10px 0;font-size:13px;color:var(--amber);border-bottom:1px solid var(--line)}
+footer{margin-top:28px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+
+@media (max-width:640px){
+  .wrap{padding:20px 16px 56px}
+  .hour{grid-template-columns:40px 6px 6px minmax(0,1fr);gap:0 5px}
+  .h-time{font-size:12px}
+  .h-gap{padding-left:40px}
+  .mast h1{font-size:29px}
+  .clocks{grid-template-columns:minmax(0,1fr)}
+  .clock{padding:12px 0 10px}
+  .clock+.clock{padding-left:0;border-left:0;border-top:1px solid var(--line)}
+  .clock dd{font-size:24px}
+  .scene,.gap,.cursor{grid-template-columns:18px minmax(0,1fr)}
+  .s-time{grid-column:2;grid-row:1;text-align:left;padding:14px 0 0}
+  .s-time small{display:inline;margin-left:8px}
+  .s-spine{grid-column:1;grid-row:1/3}
+  .s-spine::before{left:6px}
+  .s-spine i{left:1px;top:19px}
+  .s-body{grid-column:2;grid-row:2;border-top:0;padding-top:2px}
+  .s-head h2{font-size:20px}
+  .gap div:first-child{display:none}
+  .gap-t{display:inline}
+  .gap .s-spine{grid-row:auto;grid-column:1}
+  .gap div:last-child{grid-column:2}
+  .cursor div:first-child{display:none}
+  .cursor .s-spine{grid-row:auto}
+  .cursor .s-spine::after{left:1px}
+  .row>button{grid-template-columns:40px 8px minmax(0,1fr);padding:10px 0}
+  .r-tail{grid-column:3;padding:2px 0 0}
+  .detail{padding-left:0}
+  .fold{padding-left:0}
+  .r-tick:nth-of-type(even){display:none}
+  .filters{gap:18px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.event-link{display:inline-block;margin:4px 6px 2px 0;padding:6px 9px;min-height:36px;border:1px solid var(--line);background:#fff;color:#002fa7;text-align:left;font:inherit;font-size:12px;cursor:pointer;overflow-wrap:anywhere}
+.event-link:focus-visible,[data-event-id]:focus{outline:2px solid #002fa7;outline-offset:3px}
+.workout-facts{margin:8px 0 10px;padding-left:12px;border-left:1px solid var(--line)}
+.workout-facts li{border:0;padding:3px 0;font-size:13px}
+.event-relations{margin-top:5px}
+.section .purchase-session>details>summary{display:list-item;padding:10px 0;line-height:1.7;overflow-wrap:anywhere}
+.purchase-session>details>ul{padding-left:12px;border-left:1px solid var(--line)}
+.capture-list li{padding:12px 0;overflow-wrap:anywhere}
+.capture-list p{margin:5px 0}
+</style>
+</head>
+<body>
+<script src="/timeline-data.js"></script>
+<script src="/expense-drilldown.js"></script>
+<main class="wrap" id="app" aria-live="polite"><div class="state"><h2>正在读取这一天</h2></div></main>
+<script>
+"use strict";
+const TZ_MS = 8 * 3600000;
+const SCENE_COLORS = {conversation:"#4f7f8c",media:"#a56a94",dining:"#a06b26",errand:"#b08a4f",office:"#2f5fb3",work:"#2f5fb3",home_quiet:"#5f8583",quiet:"#a3aab3",transit:"#7263a8",gym:"#c4513f",general:"#8a919c"};
+const CAT_COLORS = [[/餐饮|消费|支付/,"#a06b26"],[/运动|健身/,"#c4513f"],[/编程|工作|项目/,"#002fa7"],[/健康|作息/,"#218377"],[/灵感|想法/,"#8a4f86"],[/沟通|通话/,"#2f7d4f"],[/生活/,"#5e6673"]];
+const FILTERS = [["live","我的生活"],["work","编程·工作"],["media","媒体内容"],["unknown","来源待确认"],["all","全部"]];
+const WEEK = "日一二三四五六";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const fmt = m => `${pad(Math.floor(m / 60))}:${pad(Math.floor(m % 60))}`;
+const fmtDur = m => m >= 60 ? `${Math.floor(m / 60)} 小时${m % 60 ? ` ${Math.round(m % 60)} 分` : ""}` : `${Math.round(m)} 分钟`;
+const shToday = () => new Date(Date.now() + TZ_MS).toISOString().slice(0, 10);
+const shiftDay = (d, n) => new Date(Date.parse(d + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
+function localParts(iso) {
+  const ms = Date.parse(iso);
+  if (isNaN(ms)) return null;
+  const s = new Date(ms + TZ_MS).toISOString();
+  return {date: s.slice(0, 10), minute: +s.slice(11, 13) * 60 + +s.slice(14, 16) + +s.slice(17, 19) / 60};
+}
+
+const params = new URLSearchParams(location.search);
+if (params.has("token")) { params.delete("token"); history.replaceState(null, "", location.pathname + (params.toString() ? "?" + params : "")); }
+const IN_FRAME = window.self !== window.top;
+if (IN_FRAME || params.get("embedded") === "1") document.documentElement.classList.add("embedded");
+const store = {
+  get(key, fallback) { try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch (_) { return fallback; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* 无痕模式也要能用 */ } },
+};
+const state = {date: params.get("date") || shToday(), filter: "live", cat: "", cleanLive: true, quotes: store.get("ll.v2.quotes", true), nutritionGoals: store.get("ll.v2.nutritionGoals.v2", {mode: "cut", weightKg: 70, baseKcal: 2000, proteinRatio: 1.5, carbRatio: 1.8, fatRatio: 0.6, kcalLimit: 1700}), open: new Set(), expanded: new Set(), data: null, daily: null, dailyState: "loading", gaps: null, sig: "", seq: 0, retry: 0, parentPending: false, crossDay: false};
+const app = document.getElementById("app");
+const openKey = d => `ll.v2.open.${d}`;
+state.open = new Set(store.get(openKey(state.date), []));
+
+function authHeaders() {
+  try {
+    const t = localStorage.getItem("life_logger_access_token") || sessionStorage.getItem("life-logger-access-token");
+    return t ? {Authorization: "Bearer " + t} : {};
+  } catch (_) { return {}; }
+}
+
+// 录音覆盖不分日期、响应 4MB：切日期复用，一分钟最多取一次。
+let coverageRead = {at: 0, promise: null};
+function coverage() {
+  if (coverageRead.promise && Date.now() - coverageRead.at < 60000) return coverageRead.promise;
+  coverageRead = {at: Date.now(), promise: getJSON("/api/watch-coverage")};
+  coverageRead.promise.catch(() => { coverageRead = {at: 0, promise: null}; });
+  return coverageRead.promise;
+}
+
+function getJSON(path) {
+  const maxAge = path === "/api/watch-coverage" ? 60000
+    : (/\/api\/(?:activity-timeline|daily|dashboard\/daily|activity-digest|health\/summary)\?/.test(path)
+      && path.includes(`date=${shToday()}`) ? 15000 : 300000);
+  const read = () => getJSONOnce(path);
+  return typeof LifeTimelineData !== "undefined"
+    ? LifeTimelineData.read(path, read, {maxAge}) : read();
+}
+
+async function getJSONOnce(path) {
+  const transport = typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch || fetch;
+  const res = await transport(path, {credentials: "same-origin", headers: authHeaders()});
+  if (res.status === 401 || res.status === 403) { const e = new Error("unauthorized"); e.kind = "auth"; throw e; }
+  if (!res.ok) { const e = new Error(`HTTP ${res.status}`); e.kind = "http"; throw e; }
+  const data = await res.json();
+  // 202 或 pending 表示还在算，绝不是“这天没记录”。
+  if (res.status === 202 || ["pending", "computing", "read_busy"].includes(data && data.read_status)) { const e = new Error("pending"); e.kind = "pending"; throw e; }
+  return data;
+}
+
+function postToParent(message) {
+  if (!IN_FRAME) return;
+  try { window.parent.postMessage(message, location.origin); } catch (_) { /* 跨文档异常忽略 */ }
+}
+
+function postSummary() {
+  const D = state.data;
+  if (!D || D.date !== state.date) return;
+  document.documentElement.dataset.renderedDate = D.date;
+  document.documentElement.dataset.activityCount = D.acts.length;
+  document.documentElement.dataset.sceneCount = D.scenes.length;
+  const events = (state.daily && state.daily.events) || [];
+  const unlocated = D.acts.filter(x => x.minute == null).length;
+  const captures = captureRows(D.date, D.captureSource || {}, events).length;
+  postToParent({type: "life-logger-timeline-summary", date: D.date, events: events.length, captures,
+    unlocated, scenes: D.scenes.length, recordings: D.rec.length, loading: 0, failed: false,
+    empty: !D.acts.length && !events.length && !captures && !D.scenes.length && !D.rec.length});
+}
+
+function postHeight() {
+  if (!IN_FRAME) return;
+  requestAnimationFrame(() => {
+    const height = Math.ceil(app.getBoundingClientRect().height);
+    if (height > 0) postToParent({type: "life-logger-timeline-height", height});
+  });
+}
+if (typeof ResizeObserver === "function") new ResizeObserver(postHeight).observe(app);
+
+function alreadyPainted(date) { return document.documentElement.dataset.renderedDate === date; }
+
+function setDate(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date === state.date) return;
+  state.date = date;
+  state.open = new Set(store.get(openKey(date), []));
+  state.expanded.clear();
+  state.foodReviewOpen = false;
+  state.foodNotice = "";
+  state.editingFoodKey = null;
+  state.editingFoodScope = null;
+  state.editingFoodDraft = null;
+  state.foodRenameNotice = "";
+  state.unmatchedRenamesOpen = false;
+  state.foodInputDrafts = {};
+  state.editingExpenseKey = null;
+  state.editingExpenseDraft = null;
+  state.expenseEditNotice = "";
+  state.unmatchedEditsOpen = false;
+  state.daily = null;
+  state.digest = null;
+  state.health = null;
+  state.parentPending = false;
+  if (!IN_FRAME) { const u = new URL(location.href); u.searchParams.set("date", date); history.replaceState(null, "", u); }
+  load();
+}
+
+document.addEventListener("click", event => {
+  // [2026-11-08 改版] 饮食块“去处理”：直接在本卡片内展开「按常规份量算 / 补重量 / 不算」内联模块，不跳走页面。
+  const review = event.target.closest("[data-open-review]");
+  if (review && review.dataset.openReview === "calories") {
+    state.foodReviewOpen = !state.foodReviewOpen;
+    const panel = document.querySelector(".f-sup-panel");
+    if (panel) {
+      panel.hidden = !state.foodReviewOpen;
+      review.textContent = review.classList.contains("subtle")
+        ? (state.foodReviewOpen ? "收起调整与目标 ▲" : "调整份量 / 营养目标 ▼")
+        : (state.foodReviewOpen ? "收起处理面板 ▲" : "去处理：按常规份量算 / 补重量 / 不算");
+      postHeight();
+    } else if (state.data) {
+      keepScroll();
+    }
+    return;
+  }
+  if (review) {
+    if (IN_FRAME) postToParent({type: "life-logger-open-review", purpose: review.dataset.openReview, date: state.date});
+    else location.href = "/?view=review";
+    return;
+  }
+  const modeBtn = event.target.closest("[data-goal-mode]");
+  if (modeBtn) {
+    const mode = modeBtn.dataset.goalMode;
+    const box = modeBtn.closest("[data-goal-box]") || document;
+    const wRaw = String(box.querySelector("[data-goal-field='weightKg']")?.value || "").trim();
+    const bRaw = String(box.querySelector("[data-goal-field='baseKcal']")?.value || "").trim();
+    const weightKg = Number(wRaw) > 0 ? Number(wRaw) : ((state.nutritionGoals && state.nutritionGoals.weightKg) || 70);
+    const baseKcal = Number(bRaw) > 0 ? Math.round(Number(bRaw)) : ((state.nutritionGoals && state.nutritionGoals.baseKcal) || 2000);
+    const presets = {
+      cut: {label: "纯减脂", proteinRatio: 1.5, carbRatio: 1.8, fatRatio: 0.6, kcalDelta: -300},
+      bulk: {label: "净增肌", proteinRatio: 1.7, carbRatio: 2.8, fatRatio: 0.65, kcalDelta: 150},
+      recomp: {label: "塑形维持", proteinRatio: 1.6, carbRatio: 2.5, fatRatio: 0.65, kcalDelta: 0},
+    };
+    const p = presets[mode] || presets.cut;
+    const kcalLimit = Math.max(1000, Math.round((baseKcal + p.kcalDelta) / 50) * 50);
+    state.nutritionGoals = {mode, weightKg, baseKcal, proteinRatio: p.proteinRatio, carbRatio: p.carbRatio, fatRatio: p.fatRatio, kcalLimit};
+    store.set("ll.v2.nutritionGoals.v2", state.nutritionGoals);
+    state.foodNotice = `已按静日消耗 ${baseKcal} kcal 切换为「${p.label}」：热量 ${kcalLimit} kcal · 蛋白 ≥ ${Math.round(weightKg * p.proteinRatio)}g · 碳水 ${Math.round(weightKg * p.carbRatio)}g · 脂肪 ${Math.round(weightKg * p.fatRatio)}g`;
+    if (state.data) keepScroll();
+    return;
+  }
+  const goalBtn = event.target.closest("[data-save-nutrition-goal]");
+  if (goalBtn) {
+    const box = goalBtn.closest("[data-goal-box]") || document;
+    const wRaw = String(box.querySelector("[data-goal-field='weightKg']")?.value || "").trim();
+    const bRaw = String(box.querySelector("[data-goal-field='baseKcal']")?.value || "").trim();
+    const rRaw = String(box.querySelector("[data-goal-field='proteinRatio']")?.value || "").trim();
+    const cRaw = String(box.querySelector("[data-goal-field='carbRatio']")?.value || "").trim();
+    const fRaw = String(box.querySelector("[data-goal-field='fatRatio']")?.value || "").trim();
+    const kRaw = String(box.querySelector("[data-goal-field='kcalLimit']")?.value || "").trim();
+    const cur = state.nutritionGoals || {};
+    const weightKg = Number(wRaw) > 0 ? Number(wRaw) : 70;
+    const baseKcal = Number(bRaw) > 0 ? Math.round(Number(bRaw)) : (cur.baseKcal || 2000);
+    const proteinRatio = Number(rRaw) > 0 ? Number(rRaw) : 1.5;
+    const carbRatio = Number(cRaw) > 0 ? Number(cRaw) : 1.8;
+    const fatRatio = Number(fRaw) > 0 ? Number(fRaw) : 0.6;
+    const kcalLimit = kRaw === "" ? null : (Number(kRaw) > 0 ? Math.round(Number(kRaw)) : null);
+    state.nutritionGoals = {mode: cur.mode || "cut", weightKg, baseKcal, proteinRatio, carbRatio, fatRatio, kcalLimit};
+    store.set("ll.v2.nutritionGoals.v2", state.nutritionGoals);
+    state.foodNotice = `已更新营养目标（静日消耗 ${baseKcal} kcal）：蛋白 ≥ ${Math.round(weightKg * proteinRatio)}g · 碳水 ${Math.round(weightKg * carbRatio)}g · 脂肪 ${Math.round(weightKg * fatRatio)}g${kcalLimit ? ` · 热量 ${kcalLimit} kcal` : ""}`;
+    if (state.data) keepScroll();
+    return;
+  }
+  const labelToggle = event.target.closest("[data-toggle-label]");
+  if (labelToggle) {
+    const evId = labelToggle.dataset.toggleLabel;
+    const card = labelToggle.closest(".f-sup-item") || document;
+    const box = card.querySelector(`[data-label-box="${CSS.escape(evId)}"]`);
+    if (box) {
+      box.hidden = !box.hidden;
+      labelToggle.textContent = box.hidden ? "改每100g成分表" : "收起成分表 ▲";
+      postHeight();
+    }
+    return;
+  }
+  const foodBtn = event.target.closest("[data-food-op]");
+  if (foodBtn) {
+    submitFoodSupplement(foodBtn);
+    return;
+  }
+  const renameFoodBtn = event.target.closest("[data-food-rename]");
+  if (renameFoodBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = renameFoodBtn.dataset.foodRename;
+    if (!key) return;
+    captureFoodInputDrafts();
+    const scope = renameFoodBtn.dataset.foodRenameScope || "panel";
+    const rawName = String(renameFoodBtn.dataset.foodName || "").trim();
+    const cleanDraft = rawName.replace(/(?:\s*[（(]\s*(?:转写名称待核|名称待核|转写待核)\s*[）)])+\s*$/u, "").trim() || rawName;
+    state.editingFoodKey = key;
+    state.editingFoodScope = scope;
+    state.editingFoodDraft = cleanDraft;
+    state.foodRenameNotice = "";
+    if (state.data) keepScroll();
+    requestAnimationFrame(() => {
+      const inp = document.querySelector(`[data-food-rename-input="${CSS.escape(key)}"][data-food-rename-scope="${CSS.escape(scope)}"]`)
+        || document.querySelector(`[data-food-rename-input="${CSS.escape(key)}"]`);
+      if (inp) { inp.focus(); inp.select(); }
+    });
+    return;
+  }
+  const undoFoodRenameBtn = event.target.closest("[data-food-rename-undo]");
+  if (undoFoodRenameBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = undoFoodRenameBtn.dataset.foodRenameUndo;
+    if (key) submitFoodRenameUndo(key, undoFoodRenameBtn);
+    return;
+  }
+  if (event.target.closest("[data-food-rename-input]")) {
+    event.stopPropagation();
+    return;
+  }
+  const unmatchedRenamesDetails = event.target.closest("[data-unmatched-renames]");
+  if (unmatchedRenamesDetails) {
+    requestAnimationFrame(() => { state.unmatchedRenamesOpen = unmatchedRenamesDetails.open; postHeight(); });
+    return;
+  }
+  const editAmtBtn = event.target.closest("[data-expense-edit]");
+  if (editAmtBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = editAmtBtn.dataset.expenseEdit;
+    if (!key) return;
+    state.editingExpenseKey = key;
+    state.editingExpenseDraft = editAmtBtn.dataset.expenseAmount || "";
+    state.expenseEditNotice = "";
+    if (state.data) keepScroll();
+    requestAnimationFrame(() => {
+      const inp = document.querySelector(`[data-expense-input="${CSS.escape(key)}"]`);
+      if (inp) { inp.focus(); inp.select(); }
+    });
+    return;
+  }
+  const undoAmtBtn = event.target.closest("[data-expense-undo]");
+  if (undoAmtBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = undoAmtBtn.dataset.expenseUndo;
+    if (key) submitExpenseUndo(key, undoAmtBtn);
+    return;
+  }
+  if (event.target.closest("[data-expense-input]")) {
+    event.stopPropagation();
+    return;
+  }
+  const unmatchedDetails = event.target.closest("[data-unmatched-edits]");
+  if (unmatchedDetails) {
+    requestAnimationFrame(() => { state.unmatchedEditsOpen = unmatchedDetails.open; postHeight(); });
+    return;
+  }
+  if (!event.target.closest("[data-jump-expense]")) return;
+  document.querySelector('[data-section="expense"]')?.scrollIntoView({behavior: "smooth", block: "start"});
+});
+
+document.addEventListener("keydown", event => {
+  const foodInp = event.target && event.target.closest ? event.target.closest("[data-food-rename-input]") : null;
+  if (foodInp) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      captureFoodInputDrafts();
+      state.editingFoodKey = null;
+      state.editingFoodScope = null;
+      state.editingFoodDraft = null;
+      state.foodRenameNotice = "";
+      if (state.data) keepScroll();
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      const key = foodInp.dataset.foodRenameInput;
+      if (key) submitFoodRename(key, foodInp.value, foodInp);
+    }
+    return;
+  }
+  const inp = event.target && event.target.closest ? event.target.closest("[data-expense-input]") : null;
+  if (!inp) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    state.editingExpenseKey = null;
+    state.editingExpenseDraft = null;
+    state.expenseEditNotice = "";
+    if (state.data) keepScroll();
+    return;
+  }
+  if (event.key === "Enter") {
+    event.preventDefault();
+    event.stopPropagation();
+    const key = inp.dataset.expenseInput;
+    if (key) submitExpenseEdit(key, inp.value, inp);
+  }
+});
+
+function captureFoodInputDrafts() {
+  if (!state.foodInputDrafts) state.foodInputDrafts = {};
+  document.querySelectorAll("[data-food-grams]").forEach(el => {
+    const id = el.dataset.foodGrams;
+    const v = String(el.value || "").trim();
+    if (id) {
+      state.foodInputDrafts[id] = state.foodInputDrafts[id] || {};
+      state.foodInputDrafts[id].grams = v;
+    }
+  });
+  document.querySelectorAll("[data-food-kcal]").forEach(el => {
+    const id = el.dataset.foodKcal;
+    const v = String(el.value || "").trim();
+    if (id) {
+      state.foodInputDrafts[id] = state.foodInputDrafts[id] || {};
+      state.foodInputDrafts[id].kcal = v;
+    }
+  });
+}
+
+async function submitFoodRename(eventId, rawValue, inputEl) {
+  const val = String(rawValue == null ? "" : rawValue).trim();
+  if (!val) {
+    state.foodRenameNotice = "请输入饮食名称";
+    if (inputEl) inputEl.focus();
+    if (state.data) keepScroll();
+    return;
+  }
+  captureFoodInputDrafts();
+  if (inputEl) inputEl.disabled = true;
+  state.foodRenameNotice = "";
+  try {
+    const transport = (typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch) || fetch;
+    const res = await transport("/api/food/rename", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", ...authHeaders()},
+      body: JSON.stringify({date: state.date, event_id: eventId, name: val}),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.ok === false) {
+      throw new Error(out.error || out.detail || `HTTP ${res.status}`);
+    }
+    state.editingFoodKey = null;
+    state.editingFoodScope = null;
+    state.editingFoodDraft = null;
+    state.foodRenameNotice = "";
+    if (typeof LifeTimelineData !== "undefined" && typeof LifeTimelineData.clear === "function") {
+      LifeTimelineData.clear("/api/daily");
+    }
+    await loadDaily(state.date, state.seq);
+  } catch (err) {
+    if (inputEl) inputEl.disabled = false;
+    state.foodRenameNotice = `改名字失败：${err && err.message ? err.message : String(err)}`;
+    if (state.data) keepScroll();
+  }
+}
+
+async function submitFoodRenameUndo(eventId, btnEl) {
+  captureFoodInputDrafts();
+  if (btnEl) btnEl.disabled = true;
+  state.foodRenameNotice = "";
+  try {
+    const transport = (typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch) || fetch;
+    const res = await transport("/api/food/rename/undo", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", ...authHeaders()},
+      body: JSON.stringify({date: state.date, event_id: eventId}),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.ok === false) {
+      throw new Error(out.error || out.detail || `HTTP ${res.status}`);
+    }
+    state.editingFoodKey = null;
+    state.editingFoodScope = null;
+    state.editingFoodDraft = null;
+    state.foodRenameNotice = "";
+    if (typeof LifeTimelineData !== "undefined" && typeof LifeTimelineData.clear === "function") {
+      LifeTimelineData.clear("/api/daily");
+    }
+    await loadDaily(state.date, state.seq);
+  } catch (err) {
+    if (btnEl) btnEl.disabled = false;
+    state.foodRenameNotice = `撤销改名失败：${err && err.message ? err.message : String(err)}`;
+    if (state.data) keepScroll();
+  }
+}
+
+async function submitExpenseEdit(entryKey, rawValue, inputEl) {
+  const val = Number(String(rawValue == null ? "" : rawValue).trim());
+  if (!Number.isFinite(val) || val <= 0) {
+    state.expenseEditNotice = "请输入大于 0 的金额";
+    if (inputEl) inputEl.focus();
+    if (state.data) keepScroll();
+    return;
+  }
+  if (inputEl) inputEl.disabled = true;
+  state.expenseEditNotice = "";
+  try {
+    const transport = (typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch) || fetch;
+    const res = await transport("/api/expense/edit", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", ...authHeaders()},
+      body: JSON.stringify({date: state.date, entry_key: entryKey, amount: val}),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.ok === false) {
+      throw new Error(out.error || out.detail || `HTTP ${res.status}`);
+    }
+    state.editingExpenseKey = null;
+    state.editingExpenseDraft = null;
+    state.expenseEditNotice = "";
+    if (typeof LifeTimelineData !== "undefined" && typeof LifeTimelineData.clear === "function") {
+      LifeTimelineData.clear("/api/daily");
+    }
+    await loadDaily(state.date, state.seq);
+  } catch (err) {
+    if (inputEl) inputEl.disabled = false;
+    state.expenseEditNotice = `改金额失败：${err && err.message ? err.message : String(err)}`;
+    if (state.data) keepScroll();
+  }
+}
+
+async function submitExpenseUndo(entryKey, btnEl) {
+  if (btnEl) btnEl.disabled = true;
+  state.expenseEditNotice = "";
+  try {
+    const transport = (typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch) || fetch;
+    const res = await transport("/api/expense/edit/undo", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", ...authHeaders()},
+      body: JSON.stringify({date: state.date, entry_key: entryKey}),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.ok === false) {
+      throw new Error(out.error || out.detail || `HTTP ${res.status}`);
+    }
+    state.editingExpenseKey = null;
+    state.editingExpenseDraft = null;
+    state.expenseEditNotice = "";
+    if (typeof LifeTimelineData !== "undefined" && typeof LifeTimelineData.clear === "function") {
+      LifeTimelineData.clear("/api/daily");
+    }
+    await loadDaily(state.date, state.seq);
+  } catch (err) {
+    if (btnEl) btnEl.disabled = false;
+    state.expenseEditNotice = `撤销失败：${err && err.message ? err.message : String(err)}`;
+    if (state.data) keepScroll();
+  }
+}
+
+async function submitFoodSupplement(btn) {
+  const op = btn.dataset.foodOp;
+  const evId = btn.dataset.eventId;
+  if (!op || !evId) return;
+  const card = btn.closest(".f-sup-item") || document;
+  const gramsInput = card.querySelector(`[data-food-grams="${CSS.escape(evId)}"]`);
+  const kcalInput = card.querySelector(`[data-food-kcal="${CSS.escape(evId)}"]`);
+  const body = {
+    source_id: `cal|${state.date}|${evId}`,
+    operation: op,
+    op_id: `op_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+  };
+  if (op === "enter_weight") {
+    const g = gramsInput ? String(gramsInput.value || "").trim() : "";
+    if (!g || !(Number(g) > 0)) {
+      state.foodNotice = "请先填写大于 0 的克数";
+      if (gramsInput) gramsInput.focus();
+      if (state.data) keepScroll();
+      return;
+    }
+    body.grams = g;
+    const k = kcalInput ? String(kcalInput.value || "").trim() : "";
+    if (k && Number(k) > 0) body.calories_kcal = k;
+    const labelBox = card.querySelector(`[data-label-box="${CSS.escape(evId)}"]`);
+    if (labelBox && !labelBox.hidden) {
+      const eVal = String(labelBox.querySelector("[data-p100='energy']")?.value || "").trim();
+      const eUnit = String(labelBox.querySelector("[data-p100='unit']")?.value || "kcal").trim();
+      const pVal = String(labelBox.querySelector("[data-p100='protein_g']")?.value || "").trim();
+      const fVal = String(labelBox.querySelector("[data-p100='fat_g']")?.value || "").trim();
+      const cVal = String(labelBox.querySelector("[data-p100='carbohydrates_g']")?.value || "").trim();
+      const naVal = String(labelBox.querySelector("[data-p100='sodium_mg']")?.value || "").trim();
+      if (eVal && Number(eVal) > 0) {
+        const p100 = {};
+        if (eUnit === "kj") p100.energy_kj = Number(eVal);
+        else p100.energy_kcal = Number(eVal);
+        if (pVal !== "" && Number(pVal) >= 0) p100.protein_g = Number(pVal);
+        if (fVal !== "" && Number(fVal) >= 0) p100.fat_g = Number(fVal);
+        if (cVal !== "" && Number(cVal) >= 0) p100.carbohydrates_g = Number(cVal);
+        if (naVal !== "" && Number(naVal) >= 0) p100.sodium_mg = Number(naVal);
+        body.per_100g = p100;
+      }
+    }
+  }
+  btn.disabled = true;
+  state.foodNotice = "正在保存并重算今日饮食…";
+  if (state.data) keepScroll();
+  try {
+    const transport = (typeof LifeTimelineData !== "undefined" && LifeTimelineData.fetch) || fetch;
+    const res = await transport("/api/judgment-queue/answer", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {"Content-Type": "application/json", ...authHeaders()},
+      body: JSON.stringify(body),
+    });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok || out.ok === false) {
+      throw new Error(out.error || out.detail || `HTTP ${res.status}`);
+    }
+    const notices = {
+      adopt_candidate: "已按常规份量算进今天的饮食。",
+      enter_weight: "已按你补的重量算进今天的饮食。",
+      skip: "已记下：这笔不算热量。",
+    };
+    state.foodNotice = notices[op] || "已更新今日饮食。";
+    if (typeof LifeTimelineData !== "undefined" && typeof LifeTimelineData.clear === "function") {
+      LifeTimelineData.clear("/api/daily");
+    }
+    await loadDaily(state.date, state.seq);
+  } catch (err) {
+    state.foodNotice = `补充失败：${err && err.message ? err.message : String(err)}`;
+    if (state.data) keepScroll();
+  }
+}
+
+window.addEventListener("message", event => {
+  if (event.source !== window.parent || event.origin !== location.origin) return;
+  const m = event.data || {};
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(m.date || ""))) return;
+  if (m.type === "life-logger-timeline-set-date") setDate(m.date);
+  else if (m.type === "life-logger-timeline-data-updated" && m.date === state.date) { if (state.data) load(true); }
+  else if (m.type === "life-logger-timeline-pending" && m.date === state.date) { state.parentPending = true; if (state.data) keepScroll(); }
+});
+
+async function loadDaily(date, seq) {
+  state.dailyState = "loading";
+  try {
+    const daily = await getJSON(`/api/daily?date=${date}`);
+    if (seq !== state.seq) return;
+    state.daily = daily;
+    state.dailyState = "ready";
+  } catch (e) {
+    if (seq !== state.seq) return;
+    state.dailyState = e.kind === "pending" ? "pending" : "failed";
+    if (e.kind === "pending" && state.retry < 6) {
+      state.retry += 1;
+      setTimeout(() => { if (seq === state.seq) loadDaily(date, seq); }, 3000 + state.retry * 1000);
+    }
+  }
+  if (seq === state.seq && state.data) { keepScroll(); postSummary(); }
+}
+
+async function loadGaps() {
+  if (state.gaps) return;
+  try { const g = await getJSON("/coverage-gaps.json"); state.gaps = g && Array.isArray(g.days) ? g : {days: []}; }
+  catch (_) { state.gaps = {days: []}; }
+  if (state.data) keepScroll();
+}
+
+async function load(silent) {
+  const seq = ++state.seq;
+  const date = state.date;
+  if (!silent) {
+    state.retry = 0;
+    state.data = null;
+    app.innerHTML = `${mast(date)}<div class="state"><h2>正在读取这一天</h2></div>`;
+    bindNav();
+  }
+  loadGaps();
+  try {
+    const timeline = getJSON(`/api/activity-timeline?date=${date}`);
+    const rest = Promise.allSettled([getJSON(`/api/dashboard/daily?date=${date}`), coverage()]);
+    // 消费/营养/健康与活动主列表并发拉取，不等 dashboard/daily 跑完才开始，避免顶部卡片长时间显示「正在读取」。
+    loadDaily(date, seq);
+    getJSON(`/api/activity-digest?date=${date}`).then(digest => {
+      if (seq === state.seq) { state.digest = digest; if (state.data) keepScroll(); }
+    }).catch(() => {});
+    getJSON(`/api/health/summary?date=${date}`).then(health => {
+      if (seq === state.seq) { state.health = health; if (state.data) keepScroll(); }
+    }).catch(() => {});
+    // 场景接口冷启动要几秒：活动先画出来，场景和录音到了再补，不让用户对着空页等。
+    if (!silent || !state.data) {
+      const first = await timeline.then(value => value, () => null);
+      if (seq !== state.seq) return;
+      if (first) {
+        state.data = shape(date, first, null, null);
+        state.data.scenesPending = true;
+        state.data.unassociated = first.unassociated_items || [];
+        render();
+        postSummary();
+      }
+    }
+    const [tl, [dash, cov]] = await Promise.all([timeline.then(value => ({status: "fulfilled", value}), reason => ({status: "rejected", reason})), rest]);
+    if (seq !== state.seq) return;
+    if (tl.status === "rejected") throw tl.reason;
+    const sig = JSON.stringify([tl.value, dash.value, cov.value && cov.value.device_offline]);
+    const unchanged = silent && sig === state.sig && state.data && state.data.date === date;
+    state.sig = sig;
+    if (!unchanged) {
+      state.data = shape(date, tl.value, dash.status === "fulfilled" ? dash.value : null, cov.status === "fulfilled" ? cov.value : null);
+      state.data.offline = cov.status === "fulfilled" ? cov.value.device_offline : null;
+      state.data.unassociated = tl.value.unassociated_items || [];
+      if (silent || alreadyPainted(date)) keepScroll(); else render();
+    }
+    postSummary();
+    // 当天画完后，空闲时顺手预取前一天（只预取一次、逐个发），点「前一天」时直接出。
+    if (!silent) setTimeout(() => {
+      if (seq !== state.seq) return;
+      const prev = shiftDay(date, -1);
+      getJSON(`/api/activity-timeline?date=${prev}`)
+        .then(() => getJSON(`/api/daily?date=${prev}`))
+        .then(() => getJSON(`/api/dashboard/daily?date=${prev}`))
+        .then(() => getJSON(`/api/health/summary?date=${prev}`))
+        .then(() => getJSON(`/api/activity-digest?date=${prev}`))
+        .catch(() => {});
+    }, 800);
+    // 后端第一次算这一天时场景会晚到：过几秒静默再取，取到前明确提示，不把活动画成“未归入场景”。
+    if ((state.data.scenesPending || state.data.readStale) && state.retry < 6) {
+      state.retry += 1;
+      setTimeout(() => { if (seq === state.seq) load(true); }, 3000 + state.retry * 1000);
+    }
+  } catch (e) {
+    if (seq !== state.seq) return;
+    if (e.kind === "pending") {
+      app.innerHTML = `${mast(date)}<div class="state"><h2>这一天还在整理</h2><p>这不代表没有记录，好了会自动显示。</p></div>`;
+      bindNav();
+      if (state.retry < 6) { state.retry += 1; setTimeout(() => { if (seq === state.seq) load(true); }, 3000 + state.retry * 1000); }
+      return;
+    }
+    const auth = e.kind === "auth";
+    app.innerHTML = `${mast(date)}<div class="state err"><h2>${auth ? "需要访问令牌" : "这一天没读取成功"}</h2><p>${auth ? "令牌缺失或已失效，请回到首页重新输入。" : "不代表这天没有记录。可以稍后再试。"}</p><button type="button" id="retry">重新读取</button></div>`;
+    bindNav();
+    document.getElementById("retry").onclick = () => load();
+    postToParent({type: "life-logger-timeline-summary", date, events: 0, captures: 0, unlocated: 0, scenes: 0, recordings: 0, loading: 0, failed: true, empty: false});
+  }
+}
+
+function placeActivity(a, date) {
+  const occ = a.occurrence_start ? localParts(a.occurrence_start) : null;
+  if (occ && occ.date === date) return {minute: occ.minute, basis: "occurred"};
+  const sp = a.spoken_at || a.reported_at;
+  const spoken = sp ? localParts(sp) : null;
+  if (spoken && spoken.date === date) return {minute: spoken.minute, basis: "spoken"};
+  return {minute: null, basis: "none"};
+}
+
+function shape(date, tl, dashRes, cov) {
+  const dash = (dashRes && dashRes.dashboard) || {};
+  const acts = (tl.activities || []).map(a => {
+    const p = placeActivity(a, date);
+    const rawLife = ["live", "media", "unknown"].includes(a.lifecycle) ? a.lifecycle : "unknown";
+    const mediaTitle = /^(?:播放(?:\/混入|他人|影视|剧情|古装|仙侠|东北|山村|家庭|游戏|对话|来源不明|诗句)|背景(?:播放|剧情|音频?|对白))/u.test(String(a.title || ""));
+    const life = (rawLife === "live" && (a.speech_target === "媒体内容" || a.category === "看视频/媒体" || mediaTitle)) ? "media" : rawLife;
+    return {a, life, minute: p.minute, basis: p.basis};
+  });
+  const scenes = (dash.timeline_scenes || []).map(s => ({...s, color: SCENE_COLORS[s.scene] || "#8a919c"})).sort((x, y) => x.start_minute - y.start_minute);
+  const rec = [];
+  for (const iv of (cov && cov.intervals) || []) {
+    const s = localParts(iv.start_at), e = localParts(iv.end_at);
+    if (!s || !e || (s.date !== date && e.date !== date)) continue;
+    const from = s.date === date ? s.minute : 0, to = e.date === date ? e.minute : 1440;
+    const last = rec[rec.length - 1];
+    if (last && from - last[1] <= 2) last[1] = Math.max(last[1], to); else rec.push([from, to]);
+  }
+  rec.sort((x, y) => x[0] - y[0]);
+  const through = tl.coverage && tl.coverage.through ? localParts(tl.coverage.through) : null;
+  const lastRec = dashRes && dashRes.last_recording_end_at ? localParts(dashRes.last_recording_end_at) : null;
+  return {date, status: tl.status, errors: tl.errors || [], conflicts: tl.conflicts || [],
+    // [2026-11-07 P2] 后端 /api/activity-timeline 的顶层 counts（total/live_count/media_count/by_fact_type）
+    backend_counts: tl.counts || null, breakdown: dash.scene_breakdown_percentages || {}, highlights: dash.ai_daily_highlights || "", acts, scenes, rec,
+    audioMin: dash.total_audio_recorded_minutes,
+    procMin: through && through.date === date ? through.minute : null,
+    capMin: lastRec && lastRec.date === date ? lastRec.minute : (rec.length ? rec[rec.length - 1][1] : null),
+    readStale: !!(dashRes && dashRes.read_status === "stale_busy"), captureSource: dash,
+    scenesPending: !dash.timeline_scenes};
+}
+
+function mast(date) {
+  const d = new Date(date + "T00:00:00Z");
+  const isToday = date === shToday();
+  const title = `${d.getUTCMonth() + 1} 月 ${d.getUTCDate()} 日`;
+  return `<header class="mast"><div><h1>${title}</h1><div class="sub">星期${WEEK[d.getUTCDay()]}${isToday ? " · 今天" : ""} · UTC+8</div></div>
+    <nav class="daynav" aria-label="切换日期"><button type="button" data-day="-1" aria-label="前一天">‹ 前一天</button>
+    ${isToday ? "" : `<button type="button" data-day="today">回到今天</button>`}
+    <button type="button" data-day="1" aria-label="后一天"${isToday ? " disabled" : ""}>后一天 ›</button></nav></header>`;
+}
+
+function bindNav() {
+  app.querySelectorAll("[data-day]").forEach(b => b.onclick = () => {
+    const v = b.dataset.day;
+    setDate(v === "today" ? shToday() : shiftDay(state.date, +v));
+  });
+}
+
+function spendText(ledger) {
+  // [2026-11-07 唯一事实来源·P1] 合计**只认后端给的 total_amount**（CNY 基准）。
+  // 原来优先按 totals_by_currency 逐币种相加，等于前端另造一个合计口径（多币种日可能不等）。
+  // 非 CNY 币种只作为附注显示，不参与合计。
+  const raw = ledger.total_amount;
+  if (raw === null || raw === undefined) return "—";   // 后端没给合计 ≠ 合计 0
+  return `¥${Number(raw).toFixed(2)}`;
+}
+
+function spendCurrencyNote(ledger) {
+  // 附注：只有出现**非 CNY** 币种时才列出，且明确写"不计入合计"。
+  const entries = Object.entries(ledger.totals_by_currency || {})
+    .filter(([currency, amount]) => currency && currency !== "CNY" && Number(amount) !== 0);
+  if (!entries.length) return "";
+  return "（另有 " + entries.map(([currency, amount]) =>
+    `${esc(currency)} ${Number(amount).toFixed(2)} 不计入合计`).join("、") + "）";
+}
+
+function cleanSpendName(tx) {
+  const raw = String((tx && (tx.item || tx.title)) || "").trim();
+  if (!raw) return "";
+  let s = raw
+    .replace(/^(?:录音中(?:疑似|提及)[：:]\s*|未确认[：:]\s*)/, "")
+    .replace(/^(?:称(?:练完之后|自己)?(?:又)?|陈述(?:自己)?|提及(?:自己)?|表示(?:自己)?|说(?:自己)?)\s*/, "")
+    .replace(/^去买菜[，,、\s]*买菜/, "买菜")
+    .replace(/[，,、\s]*(?:并)?(?:花费|花了|付了|支付|共计|一共|花了约|大约花了)\s*[零〇一二两三四五六七八九十百千万点\d.]+\s*(?:元|块|块钱|毛|角|人民币|刀|美元)?(?:[零〇一二两三四五六七八九十\d]+(?:毛|角|分)?)?\s*$/u, "")
+    .replace(/[，,、\s]+[零〇一二两三四五六七八九十百千万点\d.]+\s*(?:元|块|块钱)(?:[零〇一二两三四五六七八九十\d]+(?:毛|角|分)?)?\s*$/u, "")
+    .trim();
+  const paren = s.match(/^(?:买烟|买零食|买水|买饮料|买菜)[（(]([^（）()]+)[）)]$/);
+  if (paren && paren[1] && !paren[1].trim().startsWith("钟点")) return paren[1].trim();
+  const stripped = s.replace(/^(?:去)?(?:购买了?|买了|买|拿了|点了一份|点了个|点了)(?:[一二两三四五六七八九十\d]+(?:包|瓶|盒|袋|份|碗|杯|个|件|听|罐|提|箱|根|支|串)\s*)?/u, "").trim();
+  if (stripped && !/^(?:菜|饭|单|水|烟|酒|药|东西|早饭|午饭|晚饭|早餐|午餐|晚餐|宵夜|夜宵)$/u.test(stripped)) {
+    s = stripped;
+  } else {
+    s = s.replace(/^(?:去)?(?:购买了?|买了|买)(?:[一二两三四五六七八九十\d]+(?:包|瓶|盒|袋|份|碗|杯|个|件))?(?=菜|饭|单|水|烟|酒|药|东西)/u, "买");
+  }
+  return s || raw;
+}
+
+function spendClockHtml(daily, dailyState) {
+  const ledger = daily && daily.expense_ledger;
+  if (!ledger) {
+    const note = dailyState === "failed" ? "没读取成功，不代表没有消费" : "正在读取";
+    return `<div class="clock spend"><dt>消费</dt><dd class="tnum">—</dd><small>${note}</small></div>`;
+  }
+  // [2026-11-07 唯一事实来源·P1] 笔数用后端计数字段，不用数组长度（两者在去重/过滤后可能不等）。
+  const count = Number(ledger.payment_transaction_count ?? (ledger.payment_transactions || []).length);
+  const pending = Number(ledger.pending_broadcast_total_cny || 0);
+  // [2026-11-07 P2] 有 pending_transactions 但合计为 0（金额未明/点单待确认）时，
+  // 原来只说「这一天还没有记到消费」，看不出"其实有东西在等确认"。
+  const pendingCount = Number(ledger.pending_count ?? (ledger.pending_transactions || []).length);
+  const notes = [count ? `${count} 笔 · 看明细` : "这一天还没有记到消费"];
+  if (pending) notes.push(`另有 ¥${pending.toFixed(2)} 待确认`);
+  if (pendingCount > 0 && !pending) notes.push(`另有 ${pendingCount} 笔待确认`);
+  else if (pendingCount > 0 && pending) notes.push(`共 ${pendingCount} 笔`);
+  const txSource = (ledger.payment_transactions && ledger.payment_transactions.length)
+    ? ledger.payment_transactions
+    : (ledger.transactions || []);
+  const txList = txSource.filter(tx => tx && typeof tx === "object" && (tx.item || tx.title));
+  const curState = typeof state !== "undefined" && state ? state : null;
+  const editingKey = curState && curState.editingExpenseKey ? String(curState.editingExpenseKey) : "";
+  const txHtml = txList.length ? `<ul class="spend-items">${txList.map(tx => {
+    const rawTime = String(tx.time || tx.reported_at || "");
+    const clock = String(tx.clock || (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(rawTime) ? rawTime.slice(11, 16) : ""));
+    const name = cleanSpendName(tx);
+    const entryKey = String(tx.entry_key || tx.event_id || tx.id || "");
+    const numAmt = tx.amount != null ? Number(tx.amount) : null;
+    const amt = numAmt != null && Number.isFinite(numAmt) ? `¥${numAmt.toFixed(2)}` : "";
+    const edited = Boolean(tx.edited);
+    const origNum = tx.original_amount != null ? Number(tx.original_amount) : null;
+    const origText = origNum != null && Number.isFinite(origNum) ? String(origNum) : "";
+    const origTip = origText ? `原 ${origText} 元` : "已手动改金额";
+    let rightHtml = "";
+    if (entryKey && editingKey === entryKey) {
+      const draftVal = curState && curState.editingExpenseDraft != null
+        ? String(curState.editingExpenseDraft)
+        : (numAmt != null ? String(numAmt) : "");
+      rightHtml = `<span class="s-amt-group"><input type="number" step="0.01" min="0.01" class="s-amt-input tnum" data-expense-input="${esc(entryKey)}" value="${esc(draftVal)}" aria-label="修改金额（回车保存，Esc取消）" /></span>`;
+    } else if (amt) {
+      const editedBadge = edited ? `<span class="s-edited-tag" title="${esc(origTip)}">已改</span>` : "";
+      const undoBtn = (edited && entryKey)
+        ? `<button type="button" class="s-undo-btn" data-expense-undo="${esc(entryKey)}" title="${esc(origText ? `恢复原 ${origText} 元` : "撤销修改")}">撤销</button>`
+        : "";
+      const amtAttr = entryKey
+        ? ` role="button" tabindex="0" data-expense-edit="${esc(entryKey)}" data-expense-amount="${esc(numAmt != null ? String(numAmt) : "")}" title="${esc(edited && origText ? `${origTip} · 点击改金额` : "点击改金额")}"`
+        : "";
+      rightHtml = `<span class="s-amt-group">${editedBadge}<b class="tnum${entryKey ? " s-amt-btn" : ""}"${amtAttr}>${esc(amt)}</b>${undoBtn}</span>`;
+    }
+    return `<li><span class="s-name">${clock ? `<span class="tnum">${esc(clock)}</span> ` : ""}${esc(name)}</span>${rightHtml}</li>`;
+  }).join("")}</ul>` : "";
+  const unmatched = Array.isArray(ledger.unmatched_edits) ? ledger.unmatched_edits.filter(u => u && typeof u === "object") : [];
+  const unmatchedOpen = curState && curState.unmatchedEditsOpen ? " open" : "";
+  const unmatchedHtml = unmatched.length ? `<details class="spend-unmatched" data-unmatched-edits${unmatchedOpen}><summary class="spend-unmatched-summary">有 ${unmatched.length} 笔修改没对上，点开看</summary><ul class="spend-unmatched-list">${unmatched.map(u => {
+    const uKey = String(u.entry_key || "");
+    const uLabel = String(u.label || u.original_label || uKey || "未命名消费");
+    const uRawTime = String(u.time || "");
+    const uTime = String(u.clock || (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(uRawTime) ? uRawTime.slice(11, 16) : uRawTime));
+    const uAmt = u.amount != null && Number.isFinite(Number(u.amount)) ? `¥${Number(u.amount).toFixed(2)}` : "";
+    const uOrig = u.original_amount != null && Number.isFinite(Number(u.original_amount)) ? `原 ${Number(u.original_amount)} 元` : "";
+    const uQuote = String(u.quote || "");
+    return `<li class="spend-unmatched-item"><span class="s-unmatched-info">${uTime ? `<span class="tnum">${esc(uTime)}</span> ` : ""}${esc(uLabel)}${uOrig ? ` <span class="s-edited-tag" title="${esc(uOrig)}">${esc(uOrig)} → ${esc(uAmt)}</span>` : ` <b class="tnum">${esc(uAmt)}</b>`}${uQuote ? ` <span class="s-unmatched-quote">「${esc(uQuote)}」</span>` : ""}</span>${uKey ? `<button type="button" class="s-undo-btn" data-expense-undo="${esc(uKey)}">撤销</button>` : ""}</li>`;
+  }).join("")}</ul></details>` : "";
+  const noticeHtml = curState && curState.expenseEditNotice ? `<div class="s-edit-notice">${esc(curState.expenseEditNotice)}</div>` : "";
+  return `<div class="clock spend"><button type="button" class="spend-link" data-jump-expense><dt>消费</dt><dd class="tnum">${spendText(ledger)}</dd><small class="spend-ccy-note">${spendCurrencyNote(ledger)}</small><small>${notes.join("，")}</small></button>${txHtml}${unmatchedHtml}${noticeHtml}</div>`;
+}
+
+// ── 三大营养素（2026-11-06 派单）──────────────────────────────────
+// 数据只来自 /api/daily 的 nutrition_ledger，本地不替接口编数：
+//   · 没有记录（has_records=false，接口会把 totals 填 0）→ 显示「—」，**不能显示 0**
+//   · 有缺营养数据的食物 → 数字后面标「（N 项缺数据）」
+//   · 午餐/晚餐分开的数在 <details> 里点开看
+const MEAL_LABEL = {breakfast: "早餐", lunch: "午餐", dinner: "晚餐", snacks: "加餐", snack: "加餐", unknown: "未归餐"};
+
+function macroNum(value, unit) {
+  if (value == null || value === "" || !Number.isFinite(Number(value))) return null;
+  const n = Number(value);
+  const text = Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : n.toFixed(1);
+  return unit ? `${text} ${unit}` : text;
+}
+
+function mealMacros(items, mealTotal) {
+  // [2026-11-07 P2 唯一事实来源] 后端给了 `nutrition_ledger.meal_totals[mealKey]` 就**直接用**：
+  // calories_kcal / carbohydrates_g / protein_g / fat_g + known_counts / unknown_counts，
+  // 前端不再遍历 items 求和。只有旧夹具没有 meal_totals 时才回退到 P1 的逐项累加。
+  if (mealTotal && typeof mealTotal === "object") {
+    const known = mealTotal.known_counts || {};
+    const unknown = mealTotal.unknown_counts || {};
+    const num = (v) => (v === null || v === undefined ? null : Number(v));
+    const total = Number(known.calories_kcal ?? 0) + Number(unknown.calories_kcal ?? 0);
+    return {
+      source: "backend",
+      total,
+      kcal: num(mealTotal.calories_kcal), c: num(mealTotal.carbohydrates_g),
+      p: num(mealTotal.protein_g), f: num(mealTotal.fat_g),
+      kcalKnown: Number(known.calories_kcal ?? 0), cKnown: Number(known.carbohydrates_g ?? 0),
+      pKnown: Number(known.protein_g ?? 0), fKnown: Number(known.fat_g ?? 0),
+      kcalMissing: Number(unknown.calories_kcal ?? 0),
+      missing: Math.max(Number(unknown.calories_kcal ?? 0), Number(unknown.carbohydrates_g ?? 0),
+                        Number(unknown.protein_g ?? 0), Number(unknown.fat_g ?? 0)),
+    };
+  }
+  // 回退（旧夹具 / 后端未提供）：逐项各自累加已知值（P1 的行为，保持不变）
+  let kcal = 0, c = 0, p = 0, f = 0;
+  let kcalKnown = 0, cKnown = 0, pKnown = 0, fKnown = 0;
+  const total = (items || []).length;
+  for (const it of items || []) {
+    const nu = (it && it.nutrients) || {};
+    if (it && it.calories_kcal != null) { kcal += Number(it.calories_kcal) || 0; kcalKnown++; }
+    if (nu.carbohydrates_g != null) { c += Number(nu.carbohydrates_g) || 0; cKnown++; }
+    if (nu.protein_g != null) { p += Number(nu.protein_g) || 0; pKnown++; }
+    if (nu.fat_g != null) { f += Number(nu.fat_g) || 0; fKnown++; }
+  }
+  return {
+    source: "items_fallback",
+    total, kcal, c, p, f,
+    kcalKnown, cKnown, pKnown, fKnown,
+    missing: total - Math.min(kcalKnown, cKnown, pKnown, fKnown),
+    kcalMissing: total - kcalKnown,
+  };
+}
+
+function macrosHtml(daily, dailyState) {
+  const ledger = daily && daily.nutrition_ledger;
+  const unmatched = ledger && Array.isArray(ledger.unmatched_renames) ? ledger.unmatched_renames.filter(u => u && typeof u === "object") : [];
+  const renderUnmatched = () => {
+    if (!unmatched.length) return "";
+    const curState = typeof state !== "undefined" && state ? state : null;
+    const unmatchedOpen = curState && curState.unmatchedRenamesOpen ? " open" : "";
+    return `<details class="spend-unmatched food-unmatched" data-unmatched-renames${unmatchedOpen}><summary class="spend-unmatched-summary">有 ${unmatched.length} 处改名没对上，点开看</summary><ul class="spend-unmatched-list">${unmatched.map(u => {
+      const uKey = String(u.event_id || "");
+      const uName = String(u.name || "未命名饮食");
+      const uOrig = String(u.original_name || u.raw_original_name || "");
+      const uRawTime = String(u.time || "");
+      const uTime = String(u.clock || (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(uRawTime) ? uRawTime.slice(11, 16) : uRawTime));
+      const uQuote = String(u.quote || "");
+      return `<li class="spend-unmatched-item"><span class="s-unmatched-info">${uTime ? `<span class="tnum">${esc(uTime)}</span> ` : ""}${uOrig ? `<span class="s-edited-tag" title="${esc(`原：${uOrig}`)}">原：${esc(uOrig)} → ${esc(uName)}</span>` : `<b>${esc(uName)}</b>`}${uQuote ? ` <span class="s-unmatched-quote">「${esc(uQuote)}」</span>` : ""}</span>${uKey ? `<button type="button" class="s-undo-btn" data-food-rename-undo="${esc(uKey)}">撤销</button>` : ""}</li>`;
+    }).join("")}</ul></details>`;
+  };
+  const empty = (note, extra = "") => `<div class="clock food" data-section="nutrition"><dt>饮食</dt><dd class="tnum">—</dd><small>${esc(note)}</small>${extra}</div>`;
+  if (!ledger) return empty(dailyState === "failed" ? "没读取成功，不代表没有饮食" : "正在读取");
+  const count = Number(ledger.consumed_record_count != null ? ledger.consumed_record_count : (ledger.record_count || 0));
+  const totals = ledger.totals || {};
+  const hasTotals = totals.carbohydrates_g != null || totals.protein_g != null || totals.fat_g != null || totals.calories_kcal != null;
+  // has_records=false 时接口把 totals 全填 0 —— 这是"没记录"，不是"吃了 0 克"
+  if (!ledger.has_records || (!hasTotals && !count)) return empty("这一天还没有饮食记录", renderUnmatched());
+
+  const c = macroNum(totals.carbohydrates_g), p = macroNum(totals.protein_g), f = macroNum(totals.fat_g);
+  const kcal = macroNum(totals.calories_kcal);
+  const missing = Number(ledger.unknown_nutrition_count != null
+    ? ledger.unknown_nutrition_count
+    : ((ledger.totals_unknown_counts || {}).calories_kcal || 0));
+  const parts = [
+    `<span>碳水 <b class="tnum">${c == null ? "—" : `${c} g`}</b></span>`,
+    `<span>蛋白 <b class="tnum">${p == null ? "—" : `${p} g`}</b></span>`,
+    `<span>脂肪 <b class="tnum">${f == null ? "—" : `${f} g`}</b></span>`,
+    `<span>合计 <b class="tnum">${kcal == null ? "—" : `${kcal} kcal`}</b>${missing > 0 ? `<span class="macros-warn">（${missing} 项缺数据）</span>` : ""}</span>`,
+  ];
+
+  const rows = [];
+  const mealSummaries = [];
+  for (const [key, items] of Object.entries(ledger.meals || {})) {
+    if (!Array.isArray(items) || !items.length) continue;
+    const m = mealMacros(items, (ledger.meal_totals || {})[key]);
+    const label = MEAL_LABEL[key] || key;
+    const foodText = items.map(it => {
+      if (!it || typeof it !== "object") return "";
+      const name = String(it.food || it.item || "").trim();
+      if (!name || /包装食品/.test(name)) return "";
+      const qty = it.quantity != null && it.unit ? ` ${it.quantity}${it.unit}` : "";
+      const cand = it.portion_estimate_candidate;
+      const note = it.calories_kcal != null ? ""
+        : (cand && cand.grams ? `（未称重，参考约 ${cand.grams}g）` : "（未称重）");
+      return `${esc(name)}${esc(qty)}${esc(note)}`;
+    }).filter(Boolean).join("、");
+    if (foodText) mealSummaries.push(`<span><b>${esc(label)}</b>：${foodText}</span>`);
+    // [2026-11-07 P1] 每一项各自显示：已知就显示数字，缺就显示"—"，不再整餐丢弃。
+    const anyKnown = m.kcalKnown || m.cKnown || m.pKnown || m.fKnown;
+    if (!anyKnown) {
+      // 整餐一项已知值都没有：保持既有文案「— · N 项缺数据」
+      rows.push(`<li><span class="m-name">${esc(label)}</span><span class="tnum">— · ${m.missing} 项缺数据</span>${foodText ? `<span class="m-foods">· ${foodText}</span>` : ""}</li>`);
+      continue;
+    }
+    const bits = [
+      m.kcalKnown ? `${macroNum(m.kcal) || 0} kcal` : "热量—",
+      m.cKnown ? `碳 ${macroNum(m.c)} g` : "碳—",
+      m.pKnown ? `蛋 ${macroNum(m.p)} g` : "蛋—",
+      m.fKnown ? `脂 ${macroNum(m.f)} g` : "脂—",
+    ];
+    const partial = m.missing > 0 ? ` · ${m.missing} 项缺数据（部分未知）` : "";
+    rows.push(`<li><span class="m-name">${esc(label)}</span><span class="tnum">${bits.join(" · ")}${partial}</span>${foodText ? `<span class="m-foods">· ${foodText}</span>` : ""}</li>`);
+  }
+  // [2026-11-07 改版] 饮食块照消费块的样子：大字只放总热量（或“热量待定”），三大营养素一行小字，
+  // 每餐一行；没算出来的给一个“去处理”，直接打开「需要我判断 · 热量待定」。数字仍全部来自 nutrition_ledger。
+  if (typeof foodCardHtml === "function") return foodCardHtml(ledger, {c, p, f, kcal, missing});
+  const foodsLine = mealSummaries.length ? `<div class="macros-foods">${mealSummaries.join(" · ")}</div>` : "";
+  // 没算的就明说没算、为什么没算（没说份量不估热量），不只留一个「—」让人猜。
+  const unweighed = [];
+  for (const items of Object.values(ledger.meals || {})) {
+    for (const it of Array.isArray(items) ? items : []) {
+      if (!it || typeof it !== "object" || it.calories_kcal != null) continue;
+      const name = String(it.food || it.item || "").trim();
+      if (name && !/包装食品/.test(name) && !unweighed.includes(name)) unweighed.push(name);
+    }
+  }
+  const whyLine = unweighed.length
+    ? `<div class="macros-why">${kcal == null ? "热量没算" : "合计只含已知部分"}：${unweighed.map(esc).join("、")} 没说份量，按规矩不估</div>`
+    : "";
+  const details = rows.length
+    ? `<details class="macros-meals"><summary>按餐看（${rows.length} 餐）</summary><ul>${rows.join("")}</ul></details>`
+    : "";
+
+  return `<div class="clock macros" data-section="nutrition"><dt>三大营养素</dt><dd class="tnum macros-dd">${parts.join("")}</dd>${foodsLine}${whyLine}${details}</div>`;
+}
+
+function healthStripHtml(health) {
+  const s = health && health.summary;
+  if (!s) return "";
+  const heart = s.avg_heart_rate ? `<span>心率 <b>${s.avg_heart_rate}</b>（${s.min_heart_rate}–${s.max_heart_rate}）</span>` : "<span>心率 还没有数据</span>";
+  const steps = s.total_steps ? `<span>步数 <b>${s.total_steps}</b></span>` : "<span>步数 还没有数据</span>";
+  const sleep = s.sleep_minutes ? `<span>睡眠 <b>${fmtDur(s.sleep_minutes)}</b></span>` : "<span>睡眠 还没有数据</span>";
+  const daily = typeof state !== "undefined" && state && state.daily;
+  const fit = daily && daily.fitness_ledger;
+  const fitTotals = (fit && fit.totals) || {};
+  const fitCount = Number(fitTotals.session_count || fitTotals.workout_count || (fit && fit.workouts && fit.workouts.length) || 0);
+  const workout = fit ? (fitCount > 0 ? `<span>运动 <b>${fitCount} 次训练</b></span>` : "<span>运动 今日无训练</span>") : "";
+  const smk = daily && daily.smoking_ledger;
+  const smkCount = smk ? Number(smk.total_count ?? smk.record_count ?? (smk.records && smk.records.length) ?? 0) : 0;
+  const smoking = smkCount > 0 ? `<span>抽烟 <b>${smkCount} 次</b></span>` : "";
+  return `<div class="health-strip" data-section="health">${heart}${steps}${sleep}${workout}${smoking}</div>`;
+}
+
+// [2026-11-07 改版] 饮食块：与消费块同一种排法。只读 nutrition_ledger 的现成字段，不在前端新算数。
+function foodCardHtml(ledger, t) {
+  const fmtG = (v) => (v == null ? "未知" : `${v} 克`);
+  const curState = typeof state !== "undefined" && state ? state : null;
+  const editingKey = curState && curState.editingFoodKey ? String(curState.editingFoodKey) : "";
+  const editingScope = curState && curState.editingFoodScope ? String(curState.editingFoodScope) : "panel";
+  const draftMap = (curState && curState.foodInputDrafts) || {};
+  const pendingNames = [];
+  const pendingItems = [];
+  const allItems = [];
+  const unweighedMap = {};
+  for (const uw of Array.isArray(ledger.unweighed_items) ? ledger.unweighed_items : []) {
+    if (uw && uw.event_id) unweighedMap[String(uw.event_id)] = uw;
+  }
+  const rows = [];
+  for (const [key, items] of Object.entries(ledger.meals || {})) {
+    if (!Array.isArray(items) || !items.length) continue;
+    const label = MEAL_LABEL[key] || key;
+    const names = [];
+    const itemEntriesHtml = [];
+    let hasInteractiveItem = false;
+    for (const it of items) {
+      if (!it || typeof it !== "object") continue;
+      const name = String(it.food || it.item || "").trim();
+      if (!name || /包装食品/.test(name)) continue;
+      names.push(name);
+      const evId = String(it.event_id || "");
+      const undoKey = String(it.rename_key || evId);
+      const renamed = Boolean(it.renamed);
+      const origName = String(it.original_name || it.raw_original_name || "").trim();
+      const origTip = origName ? `原：${origName}` : "已手动改名字";
+      if (evId) allItems.push({it, mealLabel: label, name});
+      if (it.calories_kcal == null) {
+        if (!pendingNames.includes(name)) pendingNames.push(name);
+        if (evId) pendingItems.push({it, mealLabel: label, name});
+      }
+      if (evId || renamed) {
+        hasInteractiveItem = true;
+        if (evId && editingKey === evId && editingScope === "list") {
+          const draftVal = curState && curState.editingFoodDraft != null ? String(curState.editingFoodDraft) : name;
+          itemEntriesHtml.push(`<span class="f-item-entry"><input type="text" class="f-rename-input" data-food-rename-input="${esc(evId)}" data-food-rename-scope="list" value="${esc(draftVal)}" aria-label="修改食物名称（回车保存，Esc取消）" /></span>`);
+        } else {
+          const editedBadge = renamed ? `<span class="s-edited-tag" title="${esc(origTip)}">已改</span>` : "";
+          const renameBtn = evId ? `<button type="button" class="f-rename-btn" data-food-rename="${esc(evId)}" data-food-rename-scope="list" data-food-name="${esc(name)}" title="${esc(renamed && origName ? `${origTip} · 点击改名字` : "点击改名字")}">改名字</button>` : "";
+          const undoBtn = (renamed && undoKey) ? `<button type="button" class="s-undo-btn" data-food-rename-undo="${esc(undoKey)}" title="${esc(origName ? `恢复原名：${origName}` : "撤销改名")}">撤销</button>` : "";
+          itemEntriesHtml.push(`<span class="f-item-entry"><span class="f-item-name">${esc(name)}</span>${editedBadge}${renameBtn}${undoBtn}</span>`);
+        }
+      } else {
+        itemEntriesHtml.push(esc(name));
+      }
+    }
+    if (!names.length) continue;
+    const m = mealMacros(items, (ledger.meal_totals || {})[key]);
+    const mKcal = m.kcalKnown ? macroNum(m.kcal) : null;
+    const namesHtml = hasInteractiveItem ? itemEntriesHtml.join("、") : names.map(esc).join("、");
+    rows.push(`<li><span class="s-name"><span class="f-meal">${esc(label)}</span> ${namesHtml}</span>${mKcal != null ? `<b class="tnum">${esc(mKcal)} 千卡</b>` : `<b class="f-pending">待定</b>`}</li>`);
+  }
+  const big = t.kcal != null ? `${t.kcal}<span class="unit"> 千卡</span>` : "热量待定";
+  const macros = t.kcal != null
+    ? `<small class="f-macros">碳水 ${fmtG(t.c)} · 蛋白 ${fmtG(t.p)} · 脂肪 ${fmtG(t.f)}</small>` : "";
+  const gRaw = (typeof state !== "undefined" && state && state.nutritionGoals) || {mode: "cut", weightKg: 70, baseKcal: 2000, proteinRatio: 1.5, carbRatio: 1.8, fatRatio: 0.6, kcalLimit: 1700};
+  const mode = ["cut", "bulk", "recomp"].includes(gRaw.mode) ? gRaw.mode : "cut";
+  const modeLabel = {cut: "纯减脂", bulk: "净增肌", recomp: "塑形维持"}[mode];
+  const weightKg = Number(gRaw.weightKg) > 0 ? Number(gRaw.weightKg) : 70;
+  const baseKcal = Number(gRaw.baseKcal) > 0 ? Math.round(Number(gRaw.baseKcal)) : 2000;
+  const proteinRatio = Number(gRaw.proteinRatio) > 0 ? Number(gRaw.proteinRatio) : (mode === "bulk" ? 1.7 : (mode === "recomp" ? 1.6 : 1.5));
+  const carbRatio = Number(gRaw.carbRatio) > 0 ? Number(gRaw.carbRatio) : (mode === "bulk" ? 2.8 : (mode === "recomp" ? 2.5 : 1.8));
+  const fatRatio = Number(gRaw.fatRatio) > 0 ? Number(gRaw.fatRatio) : (mode === "bulk" ? 0.65 : (mode === "recomp" ? 0.65 : 0.6));
+  const kcalLimit = gRaw.kcalLimit === "" || gRaw.kcalLimit == null ? null : (Number(gRaw.kcalLimit) > 0 ? Math.round(Number(gRaw.kcalLimit)) : null);
+  const proteinTarget = Math.round(weightKg * proteinRatio);
+  const carbTarget = Math.round(weightKg * carbRatio);
+  const fatTarget = Math.round(weightKg * fatRatio);
+  const totalsObj = (ledger && ledger.totals) || {};
+  const pNum = totalsObj.protein_g != null ? Number(totalsObj.protein_g) : (t.p != null ? Number(t.p) : null);
+  const cNum = totalsObj.carbohydrates_g != null ? Number(totalsObj.carbohydrates_g) : (t.c != null ? Number(t.c) : null);
+  const fNum = totalsObj.fat_g != null ? Number(totalsObj.fat_g) : (t.f != null ? Number(t.f) : null);
+  const kNum = totalsObj.calories_kcal != null ? Number(totalsObj.calories_kcal) : (t.kcal != null ? Number(t.kcal) : null);
+  const pctBar = (val, target) => (val != null && Number.isFinite(val) && target > 0) ? Math.min(100, Math.max(0, Math.round((val / target) * 100))) : 0;
+  let kcalHead = "";
+  if (kcalLimit != null && kNum != null && Number.isFinite(kNum)) {
+    const kRem = Math.round(kcalLimit - kNum);
+    if (mode === "bulk") {
+      kcalHead = kRem <= 0
+        ? `<span class="f-goal-ok tnum">总热量已吃够 ✓（${Math.round(kNum)} / ${kcalLimit} kcal）</span>`
+        : `<span class="f-goal-gap tnum">总热量还差 ${kRem} kcal（目标 ${kcalLimit} kcal）</span>`;
+    } else {
+      kcalHead = kRem >= 0
+        ? `<span class="f-goal-kcal tnum">热量上限 ${kcalLimit} kcal（差 ${kRem} kcal）</span>`
+        : `<span class="f-goal-warn tnum">热量超上限 +${Math.abs(kRem)} kcal（上限 ${kcalLimit}）</span>`;
+    }
+  }
+  const pPct = pctBar(pNum, proteinTarget);
+  const pDiff = pNum != null && Number.isFinite(pNum) ? proteinTarget - pNum : null;
+  const pStatus = pDiff == null
+    ? `<span class="f-goal-gap tnum">蛋白目标 ≥ ${proteinTarget}g（${weightKg}kg×${proteinRatio}）</span>`
+    : (pDiff <= 0.05
+      ? `<span class="f-goal-ok tnum">蛋白达标 ${macroNum(pNum)} / ${proteinTarget} 克 ✓（${weightKg}kg×${proteinRatio}）</span>`
+      : `<span class="f-goal-gap tnum">蛋白目标 ${macroNum(pNum)} / ${proteinTarget} 克（差 ${macroNum(pDiff)} 克 · ${weightKg}kg×${proteinRatio}）</span>`);
+  const pBarCls = pDiff != null && pDiff <= 0.05 ? "ok" : "gap";
+
+  const cPct = pctBar(cNum, carbTarget);
+  const cDiff = cNum != null && Number.isFinite(cNum) ? carbTarget - cNum : null;
+  let cStatus = `<span class="f-goal-kcal tnum">目标 ${carbTarget}g（${carbRatio}g/kg）</span>`;
+  let cBarCls = "ok";
+  if (cDiff != null) {
+    if (mode === "bulk") {
+      if (cDiff <= 0.05) { cStatus = `<span class="f-goal-ok tnum">已吃够 ${macroNum(cNum)} / ${carbTarget}g ✓</span>`; cBarCls = "ok"; }
+      else { cStatus = `<span class="f-goal-gap tnum">${macroNum(cNum)} / ${carbTarget}g（还差 ${macroNum(cDiff)}g）</span>`; cBarCls = "gap"; }
+    } else {
+      if (cNum > carbTarget * 1.15) { cStatus = `<span class="f-goal-warn tnum">${macroNum(cNum)} / ${carbTarget}g（超 +${macroNum(cNum - carbTarget)}g）</span>`; cBarCls = "warn"; }
+      else if (cDiff > carbTarget * 0.2) { cStatus = `<span class="f-goal-gap tnum">${macroNum(cNum)} / ${carbTarget}g（还差 ${macroNum(cDiff)}g）</span>`; cBarCls = "gap"; }
+      else { cStatus = `<span class="f-goal-ok tnum">适量 ${macroNum(cNum)} / ${carbTarget}g ✓</span>`; cBarCls = "ok"; }
+    }
+  }
+
+  const fPct = pctBar(fNum, fatTarget);
+  let fStatus = `<span class="f-goal-kcal tnum">上限 ${fatTarget}g（${fatRatio}g/kg）</span>`;
+  let fBarCls = "ok";
+  if (fNum != null && Number.isFinite(fNum)) {
+    if (fNum <= fatTarget * 1.05) { fStatus = `<span class="f-goal-ok tnum">未超 ${macroNum(fNum)} / ${fatTarget}g ✓</span>`; fBarCls = "ok"; }
+    else { fStatus = `<span class="f-goal-warn tnum">${macroNum(fNum)} / ${fatTarget}g（超 +${macroNum(fNum - fatTarget)}g）</span>`; fBarCls = "warn"; }
+  }
+
+  const goalHtml = `<div class="f-goal" data-nutrition-goal>
+    <div class="f-goal-head"><span class="f-goal-mode">目标：${esc(modeLabel)}（${esc(weightKg)}kg · 静日消耗 ${esc(baseKcal)} kcal）</span>${kcalHead}</div>
+    <div class="f-goal-bars">
+      <div class="f-goal-row"><span>蛋白</span><i class="f-goal-track"><b class="f-goal-fill ${pBarCls}" style="width:${pPct}%"></b></i>${pStatus}</div>
+      <div class="f-goal-row"><span>碳水</span><i class="f-goal-track"><b class="f-goal-fill ${cBarCls}" style="width:${cPct}%"></b></i>${cStatus}</div>
+      <div class="f-goal-row"><span>脂肪</span><i class="f-goal-track"><b class="f-goal-fill ${fBarCls}" style="width:${fPct}%"></b></i>${fStatus}</div>
+    </div>
+  </div>`;
+  const isOpen = Boolean(typeof state !== "undefined" && state && state.foodReviewOpen);
+  const noticeHtml = (typeof state !== "undefined" && state && state.foodNotice)
+    ? `<div class="f-sup-notice">${esc(state.foodNotice)}</div>` : "";
+  const cutKcal = Math.max(1000, Math.round((baseKcal - 300) / 50) * 50);
+  const bulkKcal = Math.max(1000, Math.round((baseKcal + 150) / 50) * 50);
+  const recompKcal = Math.max(1000, Math.round(baseKcal / 50) * 50);
+  const goalBoxHtml = `<div class="f-sup-item f-goal-box" data-goal-box>
+    <div class="f-sup-head"><b>营养目标模式（基于静日消耗 ${esc(baseKcal)} kcal）</b><span class="f-sup-tag tnum">蛋白 ≥ ${proteinTarget}g · 碳水 ${carbTarget}g · 脂肪 ${fatTarget}g${kcalLimit ? ` · 热量 ${kcalLimit} kcal` : ""}</span></div>
+    <div class="f-mode-chips">
+      <button type="button" class="f-mode-chip" data-goal-mode="cut" aria-pressed="${mode === "cut"}">纯减脂（${cutKcal} kcal · 蛋白1.5/碳1.8/脂0.6）</button>
+      <button type="button" class="f-mode-chip" data-goal-mode="bulk" aria-pressed="${mode === "bulk"}">净增肌（${bulkKcal} kcal · 蛋白1.7/碳2.8/脂0.65）</button>
+      <button type="button" class="f-mode-chip" data-goal-mode="recomp" aria-pressed="${mode === "recomp"}">塑形维持（${recompKcal} kcal · 蛋白1.6/碳2.5/脂0.65）</button>
+    </div>
+    <div class="f-sup-controls">
+      <label class="f-sup-field"><span>静日消耗</span><input type="number" class="kcal" inputmode="numeric" min="1000" max="5000" step="50" value="${esc(baseKcal)}" data-goal-field="baseKcal"><span>kcal</span></label>
+      <label class="f-sup-field"><span>体重</span><input type="number" inputmode="decimal" min="30" max="250" step="0.05" value="${esc(weightKg)}" data-goal-field="weightKg"><span>kg</span></label>
+      <label class="f-sup-field"><span>蛋白</span><input type="number" inputmode="decimal" min="0.5" max="4" step="0.1" value="${esc(proteinRatio)}" data-goal-field="proteinRatio"><span>g/kg</span></label>
+      <label class="f-sup-field"><span>碳水</span><input type="number" inputmode="decimal" min="0.5" max="8" step="0.1" value="${esc(carbRatio)}" data-goal-field="carbRatio"><span>g/kg</span></label>
+      <label class="f-sup-field"><span>脂肪</span><input type="number" inputmode="decimal" min="0.3" max="3" step="0.05" value="${esc(fatRatio)}" data-goal-field="fatRatio"><span>g/kg</span></label>
+      <label class="f-sup-field"><span>目标热量</span><input type="number" class="kcal" inputmode="numeric" min="0" max="10000" step="50" placeholder="可留空" value="${kcalLimit != null ? esc(kcalLimit) : ""}" data-goal-field="kcalLimit"><span>kcal</span></label>
+      <button type="button" class="f-sup-btn primary" data-save-nutrition-goal="1">保存目标</button>
+    </div>
+  </div>`;
+  const panelSource = pendingItems.length ? pendingItems : allItems;
+  const panelCards = panelSource.map(({it, mealLabel, name}) => {
+    const evId = String(it.event_id || "");
+    const uw = unweighedMap[evId];
+    const undoKey = String(it.rename_key || (uw && uw.rename_key) || evId);
+    const renamed = Boolean(it.renamed || (uw && uw.renamed));
+    const origName = String(it.original_name || (uw && uw.original_name) || it.raw_original_name || (uw && uw.raw_original_name) || "").trim();
+    const origTip = origName ? `原：${origName}` : "已手动改名字";
+    const cand = it.portion_estimate_candidate || (uw && uw.portion_estimate_candidate) || null;
+    const candKcal = cand && cand.calories_kcal != null && Number(cand.calories_kcal) > 0 ? Math.round(Number(cand.calories_kcal)) : null;
+    const itemWeightG = it.weight_g != null && Number(it.weight_g) > 0 ? Math.round(Number(it.weight_g)) : null;
+    const candG = cand && cand.grams != null && Number(cand.grams) > 0 ? Math.round(Number(cand.grams)) : itemWeightG;
+    const savedDraft = draftMap[evId] || null;
+    const inputWeightVal = savedDraft && savedDraft.grams != null && savedDraft.grams !== ""
+      ? String(savedDraft.grams)
+      : (itemWeightG != null ? String(itemWeightG) : (candG != null ? String(candG) : ""));
+    const inputKcalVal = savedDraft && savedDraft.kcal != null && savedDraft.kcal !== ""
+      ? String(savedDraft.kcal)
+      : "";
+    const curKcal = it.calories_kcal != null ? Math.round(Number(it.calories_kcal)) : null;
+    const p100 = it.nutrition_per_100g || (cand && cand.per_100g) || {};
+    const p100Kcal = p100.energy_kcal != null ? Number(p100.energy_kcal) : "";
+    const p100Prot = p100.protein_g != null ? Number(p100.protein_g) : "";
+    const p100Fat = p100.fat_g != null ? Number(p100.fat_g) : "";
+    const p100Carb = p100.carbohydrates_g != null ? Number(p100.carbohydrates_g) : "";
+    const p100Na = p100.sodium_mg != null ? Number(p100.sodium_mg) : "";
+    const quoteText = String(it.quote || (uw && uw.quote) || "").trim().replace(/\s+/g, " ").slice(0, 72);
+    const adoptBtn = (candKcal != null && curKcal == null)
+      ? `<button type="button" class="f-sup-btn primary" data-food-op="adopt_candidate" data-event-id="${esc(evId)}">按常规份量算（${candG ? `${candG}克 · ` : ""}${candKcal}千卡）</button>` : "";
+    const kcalField = (candKcal == null && curKcal == null)
+      ? `<label class="f-sup-field"><span>热量</span><input type="number" class="kcal" inputmode="decimal" min="0" max="10000" step="1" placeholder="可不填自动查库" value="${esc(inputKcalVal)}" data-food-kcal="${esc(evId)}"><span>千卡</span></label>` : "";
+    let titleHtml = "";
+    if (evId && editingKey === evId && editingScope !== "list") {
+      const draftVal = curState && curState.editingFoodDraft != null ? String(curState.editingFoodDraft) : name;
+      titleHtml = `<span class="f-sup-title-wrap"><input type="text" class="f-rename-input" data-food-rename-input="${esc(evId)}" data-food-rename-scope="panel" value="${esc(draftVal)}" aria-label="修改食物名称（回车保存，Esc取消）" /></span>`;
+    } else {
+      const editedBadge = renamed ? `<span class="s-edited-tag" title="${esc(origTip)}">已改</span>` : "";
+      const renameBtn = evId ? `<button type="button" class="f-rename-btn" data-food-rename="${esc(evId)}" data-food-rename-scope="panel" data-food-name="${esc(name)}" title="${esc(renamed && origName ? `${origTip} · 点击改名字` : "点击改名字")}">改名字</button>` : "";
+      const undoBtn = (renamed && undoKey) ? `<button type="button" class="s-undo-btn" data-food-rename-undo="${esc(undoKey)}" title="${esc(origName ? `恢复原名：${origName}` : "撤销改名")}">撤销</button>` : "";
+      titleHtml = `<span class="f-sup-title-wrap"><b>${esc(name)}</b>${editedBadge}${renameBtn}${undoBtn}</span>`;
+    }
+    const weightNote = itemWeightG || candG;
+    return `<div class="f-sup-item">
+      <div class="f-sup-head">${titleHtml}<span class="f-sup-tag">${esc(mealLabel)}${curKcal != null ? ` · 已算 ${curKcal} 千卡${weightNote ? `（${weightNote}克）` : ""}` : " · 热量待定"}</span></div>
+      ${quoteText ? `<div class="f-sup-quote">原话：${esc(quoteText)}</div>` : ""}
+      <div class="f-sup-controls">
+        ${adoptBtn}
+        <div class="f-sup-inputs">
+          <label class="f-sup-field"><span>重量</span><input type="number" inputmode="decimal" min="1" max="10000" step="1" placeholder="输入克数" value="${esc(inputWeightVal)}" data-food-grams="${esc(evId)}"><span>克</span></label>
+          ${kcalField}
+          <button type="button" class="f-sup-btn primary" data-food-op="enter_weight" data-event-id="${esc(evId)}">${curKcal != null ? "保存修改" : "按重量补算"}</button>
+        </div>
+        <button type="button" class="f-sup-btn" data-toggle-label="${esc(evId)}">改每100g成分表</button>
+        <button type="button" class="f-sup-btn skip" data-food-op="skip" data-event-id="${esc(evId)}">不算这笔</button>
+      </div>
+      <div class="f-sup-label-box" data-label-box="${esc(evId)}" hidden>
+        <div class="f-sup-label-title"><span>每 100 克营养成分表（填好后点「${curKcal != null ? "保存修改" : "按重量补算"}」，会自动记住供下次复用）</span></div>
+        <div class="f-sup-label-grid">
+          <label class="f-sup-field"><span>能量</span><input type="number" inputmode="decimal" min="0" step="0.1" placeholder="必填" value="${esc(p100Kcal)}" data-p100="energy"><select data-p100="unit"><option value="kcal">千卡/100g</option><option value="kj">千焦/100g</option></select></label>
+          <label class="f-sup-field"><span>蛋白质</span><input type="number" inputmode="decimal" min="0" step="0.1" placeholder="克" value="${esc(p100Prot)}" data-p100="protein_g"><span>g</span></label>
+          <label class="f-sup-field"><span>脂肪</span><input type="number" inputmode="decimal" min="0" step="0.1" placeholder="克" value="${esc(p100Fat)}" data-p100="fat_g"><span>g</span></label>
+          <label class="f-sup-field"><span>碳水</span><input type="number" inputmode="decimal" min="0" step="0.1" placeholder="克" value="${esc(p100Carb)}" data-p100="carbohydrates_g"><span>g</span></label>
+          <label class="f-sup-field"><span>钠</span><input type="number" inputmode="decimal" min="0" step="1" placeholder="毫克" value="${esc(p100Na)}" data-p100="sodium_mg"><span>mg</span></label>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  const panelHtml = `<div class="f-sup-panel"${isOpen ? "" : " hidden"}>${noticeHtml}${goalBoxHtml}${panelCards}</div>`;
+  const pending = pendingNames.length
+    ? `<small class="f-why">${t.kcal != null ? `另有 ${pendingNames.length} 样没算：` : ""}${pendingNames.map(esc).join("、")} 没说份量</small>
+       <button type="button" class="f-action" data-open-review="calories">${isOpen ? "收起处理面板 ▲" : "去处理：按常规份量算 / 补重量 / 不算"}</button>${panelHtml}`
+    : `<button type="button" class="f-action subtle" data-open-review="calories">${isOpen ? "收起调整与目标 ▲" : "调整份量 / 营养目标 ▼"}</button>${panelHtml}`;
+  const unmatched = Array.isArray(ledger.unmatched_renames) ? ledger.unmatched_renames.filter(u => u && typeof u === "object") : [];
+  const unmatchedOpen = curState && curState.unmatchedRenamesOpen ? " open" : "";
+  const unmatchedHtml = unmatched.length ? `<details class="spend-unmatched food-unmatched" data-unmatched-renames${unmatchedOpen}><summary class="spend-unmatched-summary">有 ${unmatched.length} 处改名没对上，点开看</summary><ul class="spend-unmatched-list">${unmatched.map(u => {
+    const uKey = String(u.event_id || "");
+    const uName = String(u.name || "未命名饮食");
+    const uOrig = String(u.original_name || u.raw_original_name || "");
+    const uRawTime = String(u.time || "");
+    const uTime = String(u.clock || (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(uRawTime) ? uRawTime.slice(11, 16) : uRawTime));
+    const uQuote = String(u.quote || "");
+    return `<li class="spend-unmatched-item"><span class="s-unmatched-info">${uTime ? `<span class="tnum">${esc(uTime)}</span> ` : ""}${uOrig ? `<span class="s-edited-tag" title="${esc(`原：${uOrig}`)}">原：${esc(uOrig)} → ${esc(uName)}</span>` : `<b>${esc(uName)}</b>`}${uQuote ? ` <span class="s-unmatched-quote">「${esc(uQuote)}」</span>` : ""}</span>${uKey ? `<button type="button" class="s-undo-btn" data-food-rename-undo="${esc(uKey)}">撤销</button>` : ""}</li>`;
+  }).join("")}</ul></details>` : "";
+  const renameNoticeHtml = curState && curState.foodRenameNotice ? `<div class="s-edit-notice">${esc(curState.foodRenameNotice)}</div>` : "";
+  return `<div class="clock food" data-section="nutrition"><dt>饮食</dt><dd class="tnum">${big}</dd>${macros}${goalHtml}${pending}${rows.length ? `<ul class="spend-items">${rows.join("")}</ul>` : ""}${unmatchedHtml}${renameNoticeHtml}</div>`;
+}
+
+// [2026-11-07 改版] 运动 / 健康块：步数、心率、睡眠、训练、抽烟，每项一行（数据同原 health-strip）。
+function healthClockHtml(health, daily) {
+  const s = health && health.summary;
+  const fit = daily && daily.fitness_ledger;
+  const sessions = (fit && Array.isArray(fit.sessions)) ? fit.sessions : [];
+  const fitTotals = (fit && fit.totals) || {};
+  const fitCount = sessions.length || Number(fitTotals.session_count || fitTotals.workout_count || (fit && fit.workouts && fit.workouts.length) || 0);
+  const smk = daily && daily.smoking_ledger;
+  const smkCount = smk ? Number(smk.total_count ?? smk.record_count ?? (smk.records && smk.records.length) ?? 0) : 0;
+  if (!s && !fit) return `<div class="clock health" data-section="health"><dt>运动 / 健康</dt><dd class="tnum">—</dd><small>正在读取</small></div>`;
+  const big = s && s.total_steps ? `${s.total_steps}<span class="unit"> 步</span>` : (fitCount ? `${fitCount}<span class="unit"> 次训练</span>` : "—");
+  const row = (name, value) => `<li><span class="s-name">${name}</span><b class="tnum">${value}</b></li>`;
+  const rows = [
+    s && s.total_steps && fitCount ? row("训练", `${fitCount} 次`) : (fit ? row("训练", fitCount ? `${fitCount} 次` : "今天没有") : ""),
+    row("心率", s && s.avg_heart_rate ? `${s.avg_heart_rate}（${s.min_heart_rate}–${s.max_heart_rate}）` : "还没有数据"),
+    row("睡眠", s && s.sleep_minutes ? fmtDur(s.sleep_minutes) : "还没有数据"),
+    smkCount > 0 ? row("抽烟", `${smkCount} 次`) : "",
+  ].filter(Boolean).join("");
+  // “后端汇总：”是内部用语，概览里只留内容本身。
+  const fitText = ((typeof fitnessSummaryText === "function") ? fitnessSummaryText(fit) : "").replace(/^后端汇总[:：]\s*/, "");
+  return `<div class="clock health" data-section="health"><dt>运动 / 健康</dt><dd class="tnum">${big}</dd>${fitText ? `<small data-fitness-summary>${esc(fitText)}</small>` : ""}<ul class="spend-items">${rows}</ul></div>`;
+}
+
+// [2026-11-07 P2 唯一事实来源] 活动计数：**优先用后端 counts**（total/live_count/media_count），
+// 缺失（旧接口/旧夹具）才回退到前端 filter 计数。
+function activityCounts(D) {
+  const bc = D && D.backend_counts;
+  if (bc && bc.total != null) {
+    const total = Number(bc.total);
+    // 线上 counts 的键是 {total, live, media, unknown, my_life, by_category}；
+    // 派单里写的是 live_count/media_count/by_fact_type —— 两种键名都认（前者优先），
+    // 避免"后端改了键名 → 前端静默退回自己数"。
+    const live = Number(bc.live_count ?? bc.live ?? 0);
+    const media = Number(bc.media_count ?? bc.media ?? 0);
+    const unknownRaw = bc.unknown;
+    const unknown = unknownRaw != null ? Number(unknownRaw) : Math.max(0, total - live - media);
+    return {all: total, live, media, unknown, myLife: bc.my_life != null ? Number(bc.my_life) : null,
+            byCategory: bc.by_fact_type || bc.by_category || null, source: "backend"};
+  }
+  const counts = {all: (D && D.acts ? D.acts.length : 0), live: 0, unknown: 0, media: 0, source: "frontend"};
+  (D && D.acts ? D.acts : []).forEach((x) => { counts[x.life] = (counts[x.life] || 0) + 1; });
+  return counts;
+}
+
+// 后端健身汇总条：只有 fitness_ledger.totals 存在时才出现（旧夹具不受影响）
+function fitnessSummaryHtml() {
+  if (typeof fitnessSummaryText !== "function") return "";
+  const text = fitnessSummaryText(state.daily && state.daily.fitness_ledger);
+  return text ? `<p class="fitness-summary" data-fitness-summary>${esc(text)}</p>` : "";
+}
+
+function clocksHtml(D, nowMin) {
+  const spend = spendClockHtml(state.daily, state.dailyState);
+  const macros = macrosHtml(state.daily, state.dailyState);
+  if (nowMin != null) {
+    const lag = D.capMin != null && D.procMin != null ? Math.max(0, D.capMin - D.procMin) : null;
+    const meta = [
+      `现在 <span class="tnum">${fmt(nowMin)}</span>`,
+      D.capMin != null ? `录音到 <span class="tnum">${fmt(D.capMin)}</span>` : "今天还没收到录音",
+      D.procMin != null ? `整理到 <span class="tnum">${fmt(D.procMin)}</span>${lag != null && lag > 1 ? `（还有 ${fmtDur(lag)} 待整理）` : ""}` : "",
+    ].filter(Boolean).join(" · ");
+    return overviewHtml(D, spend, macros, meta);
+  }
+  // [2026-11-07 P2] 计数：有后端 counts 就走 activityCounts()，否则按 P1 的前端滤镜算。
+  // （`typeof` 守卫是为了让只切这一个函数的旧测试装置也能跑；真实页面里它一定存在。）
+  const _c = (D.backend_counts && typeof activityCounts === "function")
+    ? activityCounts(D)
+    : {source: "frontend", all: D.acts.length};
+  const count = _c.all;
+  const live = (_c.source === "backend")
+    ? _c.live
+    : D.acts.filter(x => x.life === "live" && !x.a.looks_like_fragment).length;
+  // [2026-11-07 改版] 录音时长/条目数是系统自己的运行情况，降成概览底部一行小字（用户：不重要的别放显眼处）。
+  const audio = D.audioMin != null ? `录音 ${Math.floor(D.audioMin / 60)} 小时 ${pad(Math.round(D.audioMin % 60))} 分` : "";
+  const meta = [audio, `整理出 ${count} 条`, `本人 <b class="tnum" data-live-count>${live}</b> 条`].filter(Boolean).join(" · ");
+  return overviewHtml(D, spend, macros, meta);
+}
+
+// [2026-11-07 改版] 概览：上排三块（消费 / 饮食 / 运动·健康），系统状态只留底部一行小字和右上角“更新中”。
+function overviewHtml(D, spend, food, meta) {
+  const health = (typeof healthClockHtml === "function") ? healthClockHtml(state.health, state.daily) : "";
+  const updating = (D && D.readStale) || (typeof state !== "undefined" && state && state.parentPending);
+  const badge = updating ? `<span class="ov-badge" title="后台正在重新统计这一天，完成后自动刷新；这里暂时是上一次的结果">更新中</span>` : "";
+  return `<section class="overview">${badge}<dl class="clocks">${spend}${food}${health}</dl><p class="ov-meta">${meta}</p></section>`;
+}
+
+function ribbonHtml(D, nowMin) {
+  const pct = m => (m / 14.4).toFixed(3) + "%";
+  const ticks = [0, 3, 6, 9, 12, 15, 18, 21, 24].map(h => `<span class="r-tick tnum" style="left:${pct(h * 60)}">${pad(h)}</span>`).join("");
+  const seen = new Map();
+  D.scenes.forEach(s => { if (!seen.has(s.label)) seen.set(s.label, {color: s.color, pct: D.breakdown[s.scene]}); });
+  return `<section class="ribbon" aria-label="全天概览"><div class="ribbon-scroll">
+    <div class="r-rec" title="有录音的时段">${D.rec.map(([a, b]) => `<i style="left:${pct(a)};width:${pct(b - a)}" title="有录音 ${fmt(a)}–${fmt(b)}（${fmtDur(b - a)}）"></i>`).join("")}</div>
+    <div class="r-scene">${D.scenes.map(s => `<button type="button" data-goto="${s.start_minute}" style="left:${pct(s.start_minute)};width:${pct(s.end_minute - s.start_minute)};background:${s.color}" title="${esc(s.start_time)}–${esc(s.end_time)} ${esc(s.label)}${s.duration_minutes != null ? `（${esc(fmtDur(s.duration_minutes))}）` : ""}" aria-label="跳到 ${esc(s.start_time)} ${esc(s.label)}"></button>`).join("")}</div>
+    ${nowMin != null ? `<div class="r-now" style="left:${pct(nowMin)}" title="现在"></div>` : ""}
+    ${nowMin != null && D.procMin != null ? `<div class="r-proc" style="left:${pct(D.procMin)}" title="整理到这里"></div>` : ""}
+    ${ticks}</div>
+    <div class="legend"><span class="tnum">UTC+8</span><span><i style="background:var(--capture)"></i><b>有录音</b>（每小时左竖条）</span><span class="spoken-key tnum">08:17 只知讲述时间</span><span><b>右竖条</b>=所属场景色</span>${[...seen].map(([l, v]) => `<span><i style="background:${v.color}"></i>${esc(l)}${v.pct != null ? ` <span class="tnum">${Math.round(v.pct)}%</span>` : ""}</span>`).join("")}</div></section>`;
+}
+
+const catColor = c => { for (const [re, col] of CAT_COLORS) if (re.test(c || "")) return col; return "#848b97"; };
+// 每笔单独列出：同额的两笔是两件事，不能按金额去重。
+// 币种照实写，不知道就不写符号；单价保留单位（元/公斤、美元/月）。
+function moneyText(it) {
+  const symbol = {CNY: "¥", USD: "$"}[it.currency] ?? (it.currency ? `${it.currency} ` : "");
+  const unit = String(it.unit || "");
+  const rate = unit.includes("/") ? unit.slice(unit.indexOf("/")) : (/^[月周年天]$/.test(unit) ? `/${unit}` : "");
+  const bare = !symbol && !rate && /^[元块]$/.test(unit) ? unit : "";
+  return `${symbol}${it.amount}${bare}${rate}`;
+}
+const moneyOf = a => (a.items || []).filter(it => it.amount_kind === "money" && it.amount != null).map(moneyText);
+const HIDE_STATUS = new Set(["", "未知", "unknown", "状态未知", "待确认"]);
+// 行上只露出有信息量的状态；“已陈述/进行中”这类放到详情里。
+const ROW_STATUS = new Set(["已完成", "计划", "已点单", "已请求", "已咨询", "已要求"]);
+const cleanTitle = a => String(a.title_original || a.title || "活动记录").replace(/^(?:录音中疑似[：:]\s*|未确认[：:]\s*|录音中提及[：:]\s*)/, "");
+
+function rowHtml(x) {
+  const a = x.a, id = a.activity_id, isOpen = state.open.has(id);
+  const money = moneyOf(a);
+  const status = String(a.status || "");
+  const notes = a.time_source === "occurred_non_self" ? ["时间来自旁人或视频"] : [];
+  if (a.looks_like_fragment === true) notes.push("不确定是谁说的");
+  const txList = (typeof state !== "undefined" && state && state.daily && state.daily.expense_ledger && state.daily.expense_ledger.payment_transactions) || [];
+  const matchedTx = txList.filter(tx => tx && typeof tx === "object" && String(tx.event_id || "").split("#")[0] === String(id));
+  const confirmedMoney = matchedTx.length
+    ? matchedTx.map(tx => `¥${Number(tx.amount).toFixed(2)}`).join("、")
+    : (a._confirmed_amount != null ? `¥${Number(a._confirmed_amount).toFixed(2)}` : "");
+  const moneyHtml = confirmedMoney
+    ? `<span class="money confirmed">已入账 ${esc(confirmedMoney)}</span>`
+    : (money.length ? `<span class="money">提及 ${esc(money.join("、"))}</span>` : "");
+  const tail = [moneyHtml, ROW_STATUS.has(status) ? esc(status) : ""].filter(Boolean).join(" · ");
+  return `<li class="row" data-life="${x.life}" data-activity-id="${esc(id)}">
+    <button type="button" data-toggle="${esc(id)}" aria-expanded="${isOpen}">
+      <span class="r-clock tnum${x.basis === "spoken" ? " spoken" : ""}"${x.basis === "spoken" ? ' title="这是讲述时间，事情何时发生未说明"' : ""}>${x.minute != null ? fmt(x.minute) : "时间未定"}</span>
+      <i class="dot" style="background:${x.life === "live" ? catColor(catOf(a)) : "#c5cad2"}" title="${esc(x.life === "live" ? catOf(a) : (x.life === "media" ? "媒体内容" : "待确认"))}"></i>
+      <span class="r-title">${esc(cleanTitle(a))}${speechBadge(a)}${notes.length ? `<span class="r-note">${esc(notes.join(" · "))}</span>` : ""}</span>
+      ${tail ? `<span class="r-tail">${tail}</span>` : "<span></span>"}
+    </button>${isOpen ? detailHtml(x) : ""}</li>`;
+}
+
+const SPEECH_HIDE = new Set(["", "未知", "unknown", "未知对象"]);
+const isUserCorrected = a => a.user_corrected === true || a.speech_target_source === "user_correction" || a.source === "user_correction" || a.correction_source === "user";
+const APP_BUNDLES = {
+  "com.yetone.alma": "Alma", "com.openai.codex": "Codex", "com.google.chrome": "Chrome", "com.tencent.xinwechat": "微信",
+  "com.tencent.weworkmac": "企业微信", "com.apple.terminal": "Terminal", "com.microsoft.vscode": "VS Code", "com.apple.safari": "Safari",
+  "com.tencent.qq": "QQ", "com.bytedance.feishu": "飞书", "com.apple.music": "音乐", "com.apple.notes": "备忘录", "md.obsidian": "Obsidian", "notion.id": "Notion",
+};
+function appFromBundle(bundle) {
+  const raw = String(bundle || "").trim();
+  if (!raw) return "";
+  const hit = APP_BUNDLES[raw] || APP_BUNDLES[raw.toLowerCase()];
+  if (hit) return hit;
+  const tail = raw.split(".").filter(Boolean).pop() || "";
+  return tail ? tail.charAt(0).toUpperCase() + tail.slice(1) : "";
+}
+function appFromContext(ctx) {
+  if (!ctx || typeof ctx !== "object" || Array.isArray(ctx)) return null;
+  const name = String(ctx.app_label || "").trim() || appFromBundle(ctx.target_bundle || ctx.target_app);
+  return name ? {name, kind: ctx.kind} : null;
+}
+/** 说话时的应用：活动、子项、证据上都可能有，取第一个说得清的。 */
+function resolveApp(a) {
+  const target = String(a && a.speech_target || "").trim();
+  const outdoorOrMerchant = ["商家/店员", "媒体内容", "旁人"].includes(target);
+  const direct = appFromContext(a.input_context);
+  if (direct && (!outdoorOrMerchant || direct.kind === "dictation")) return direct;
+  const fg = a.foreground_context;
+  if (!outdoorOrMerchant && fg && fg.status === "resolved") {
+    const name = String(fg.foreground_app || "").trim() || appFromBundle(fg.foreground_bundle);
+    if (name) return {name};
+  }
+  for (const it of a.items || []) {
+    const viaItem = appFromContext(it && it.input_context);
+    if (viaItem && (!outdoorOrMerchant || viaItem.kind === "dictation")) return viaItem;
+    for (const ev of (it && it.evidence) || []) {
+      const viaEv = appFromContext(ev && ev.input_context);
+      if (viaEv && (!outdoorOrMerchant || viaEv.kind === "dictation")) return viaEv;
+    }
+  }
+  return null;
+}
+function appBadge(a) {
+  const app = resolveApp(a);
+  if (!app) return "";
+  const short = app.name.length > 18 ? `${app.name.slice(0, 18)}…` : app.name;
+  const dictated = app.kind === "dictation";
+  const tip = dictated ? "说话时正在用语音输入到这个应用" : "说话时最前面的应用，只是环境线索，不代表消息发给了它";
+  return `<span class="badge app" title="${tip}">${dictated ? "语音输入到 " : ""}${esc(short)}</span>`;
+}
+
+function speechBadge(a) {
+  const target = String(a.speech_target || "").trim();
+  const corrected = isUserCorrected(a);
+  const app = resolveApp(a);
+  const showApp = app && (app.kind === "dictation" || CHAT_APPS.test(app.name));
+  const dictated = showApp ? appBadge(a) : "";
+  const sameAsApp = showApp && target.replace(/^对/, "") === app.name;
+  return `${dictated}${SPEECH_HIDE.has(target) || sameAsApp ? "" : `<span class="badge">对${esc(target)}</span>`}${corrected ? `<span class="badge fixed" title="你纠正过这条">已纠正</span>` : ""}`;
+}
+
+function itemHtml(it) {
+  const quotes = state.quotes ? (it.evidence || []).filter(e => e && e.quote).slice(0, 3) : [];
+  const st = String(it.status || "");
+  const money = it.amount_kind === "money" && it.amount != null;
+  const other = it.amount != null && !money;
+  return `<li>${esc(it.action || "")}${!HIDE_STATUS.has(st) && /[一-龥]/.test(st) ? `<span class="st">${esc(st)}</span>` : ""}${money ? `<span class="paid-note">提及 ${esc(moneyText(it))}（未确认付款）</span>` : ""}${other ? `<span class="paid-note">${esc(it.amount)}${esc(it.unit || "")}</span>` : ""}${quotes.map(q => `<blockquote>${esc(q.quote)}${q.speaker ? ` <small>· ${esc(q.speaker)}</small>` : ""}</blockquote>`).join("")}</li>`;
+}
+
+function detailHtml(x) {
+  const a = x.a;
+  const items = a.items || [];
+  const mine = items.filter(it => (it.item_lifecycle || "live") === "live");
+  const unknown = items.filter(it => it.item_lifecycle === "unknown");
+  const media = items.filter(it => it.item_lifecycle === "media");
+  const status = String(a.status || "");
+  const unc = a.uncertainties || [];
+  const fgApp = typeof resolveApp === "function" ? resolveApp(a) : null;
+  return `<div class="detail">
+    ${x.basis === "spoken" ? `<p class="r-note">这是讲述时间，事情何时发生未说明。</p>` : ""}
+    ${fgApp && fgApp.kind !== "dictation" ? `<p class="r-note">当时前台应用：${esc(fgApp.name)}（只是环境线索，不代表消息发给了它）</p>` : ""}
+    ${!HIDE_STATUS.has(status) && /[一-龥]/.test(status) ? `<p class="r-note">状态：${esc(status)}</p>` : ""}
+    ${a.looks_like_fragment === true ? `<p class="r-note">${esc(a.fragment_reason || "不确定是谁说的")}</p>` : ""}
+    ${a.summary ? `<p>${esc(a.summary)}</p>` : ""}
+    ${mine.length ? `<h4>子项与原话（${mine.length}）</h4><ul>${mine.map(itemHtml).join("")}</ul>` : ""}
+    ${unknown.length ? `<details class="others"><summary>${unknown.length} 条待确认是谁说的</summary><ul>${unknown.map(itemHtml).join("")}</ul></details>` : ""}
+    ${media.length ? `<details class="others"><summary>${media.length} 条旁人或视频台词</summary><ul>${media.map(itemHtml).join("")}</ul></details>` : ""}
+    ${unc.length ? `<h4>还不确定</h4><ul>${unc.map(u => `<li>${esc(typeof u === "string" ? u : (u.text || u.reason || JSON.stringify(u)))}</li>`).join("")}</ul>` : ""}
+  </div>`;
+}
+
+const CARD_PREVIEW = 3;
+const WORK_LABEL = "编程·工作";
+const CODING_APPS = /^(alma|codex|claude|terminal|iterm|vs ?code|cursor|xcode|warp|ghostty|zed|openclaw|antigravity|windsurf)/i;
+const CHAT_APPS = /^(微信|企业微信|qq|飞书|钉钉|telegram|whatsapp|imessage|信息|slack|wechat|wework)/i;
+const FRAGMENT_TITLE = /零散|零碎|短句|短对话|交错对白|片段/;
+
+function isChatTarget(a) {
+  if (!a) return false;
+  const app = resolveApp(a);
+  if (app && CHAT_APPS.test(app.name)) return true;
+  const target = String(a.speech_target || "").replace(/^对/, "").trim();
+  return Boolean(target && (CHAT_APPS.test(target) || /(?:微信|企业微信|wechat)/i.test(target)));
+}
+
+function isFragmentNoise(a) {
+  return Boolean(a && a.looks_like_fragment === true && !isChatTarget(a));
+}
+
+/** 展示用的分类：对微信等聊天软件说话始终算日常生活沟通（不归入编程·工作）；其次看已确认的工作·项目、说话时的应用与关键词表。 */
+function catOf(a) {
+  const hasPhysical = (a.items || []).some(it => it && (["expense", "food", "exercise", "smoke"].includes(it.fact_type) || (it.amount != null && it.amount_kind !== "weight" && it.amount_kind !== "quantity")));
+  if (isChatTarget(a)) {
+    const rawCat = a.category_model || a.category || "";
+    if (rawCat && !["工作·项目", "编程·工作", "编程·项目优化", "生活·日常", "闲聊·其他"].includes(rawCat)) return rawCat;
+    return "沟通";
+  }
+  if (a.lifecycle === "media") {
+    if (a.category_model === "媒体内容" || a.category_model === "浏览·视频" || a.category_model === "看视频/媒体") return a.category_model;
+    return a.category && !["工作·项目", "编程·工作", "编程·项目优化", "生活·日常", "闲聊·其他"].includes(a.category) ? a.category : "媒体内容";
+  }
+  if (a.category === "工作·项目" || a.category === "编程·项目优化" || a.category_model === "工作·项目" || a.category_model === "编程·工作") return WORK_LABEL;
+  if (hasPhysical && (a.category_model || (a.category && a.category !== "生活·日常" && a.category !== "闲聊·其他"))) {
+    return a.category_model || a.category;
+  }
+  const app = resolveApp(a);
+  if (app && CODING_APPS.test(app.name)) return WORK_LABEL;
+  if (!hasPhysical && app && app.kind === "dictation" && !CHAT_APPS.test(app.name)) return WORK_LABEL;
+  if (CODING_APPS.test(String(a.speech_target || "").replace(/^对/, "").trim())) return WORK_LABEL;
+  if (!hasPhysical && /(?:openclaw|codex|claude|alma|cursor|antigravity|airflow|suvid|mypi|collab|colab|github|api|网页端|终端|派单|代码|部署|子系统|提示词)/i.test(`${a.title || ""} ${a.title_original || ""} ${a.summary || ""}`)) return WORK_LABEL;
+  if (a.category_model) return a.category_model === "工作·项目" ? WORK_LABEL : a.category_model;
+  if (app && CHAT_APPS.test(app.name)) return "沟通";
+  return a.category === "工作·项目" ? WORK_LABEL : a.category;
+}
+
+/** 对编程工具说的话和零碎短句默认折叠。对微信说话或说到钱的一律不折。 */
+function foldReason(x) {
+  const a = x.a;
+  if (isChatTarget(a)) return "";
+  if ((a.items || []).some(it => it.amount != null && it.amount_kind !== "weight" && it.amount_kind !== "quantity" || it.fact_type === "expense")) return "";
+  if (catOf(a) === WORK_LABEL) return WORK_LABEL;
+  if (a.fragment_money_protected === true) return "";
+  // Only positive title/action/quote cues; summary negations such as 未到账 must not rescue 涨工资.
+  const spending = /购买|买|支付|付款|消费|收款|到账|转账|多少钱|花钱|充值|订阅(?!量)|订单|下单|优惠券|代金券|运费|快递费|退款|退钱|现金|扫码|点餐|点单|点[一两二三四五六七八九十\d]+(?:个|份|碗|瓶|杯)|[¥￥$]|[零〇一二两三四五六七八九十百千万亿点\d.]+(?:元|块|美元|港币|欧元|日元|刀)/;
+  const spendText = [a.title || "", ...(a.items || []).flatMap(it => [it.action || "", ...(it.evidence || []).map(e => e.quote || "")])].join(" ");
+  if (spending.test(spendText) || spending.test(spendText.replace(/[^\p{L}\p{N}¥￥$]/gu, ""))) return "";
+  if (a.looks_like_fragment === true) return "零碎片段";
+  if (a.looks_like_fragment === false) return "";
+  return FRAGMENT_TITLE.test(cleanTitle(a)) ? "零碎片段" : "";
+}
+
+/** 同一场景里按类别收成卡片，事情多时能一眼看出在做什么。卡片按首条时间排序，时间未定的排最后。 */
+function hasMoney(a) {
+  return a.fragment_money_protected === true
+    || (a.items || []).some(it => it.amount != null && it.amount_kind !== "weight" && it.amount_kind !== "quantity" && (it.currency || it.fact_type === "expense"));
+}
+
+const DIGEST_KINDS = new Set(["fitness", "meal", "shopping", "outing", "other"]);
+
+/** 接模型分类和汇总卡：只改展示。判成媒体的折进媒体，说到钱的不折，点开都能找回原文。 */
+function applyDigest(D, digest) {
+  if (!digest || digest.date !== D.date) return;
+  const categories = digest.categories || {};
+  const byId = new Map();
+  for (const x of D.acts) {
+    byId.set(x.a.activity_id, x);
+    const c = categories[x.a.activity_id];
+    if (!c) continue;
+    x.a.category_model = (x.a.category === "工作·项目" || x.a.category === "编程·项目优化") && c.category_model === "闲聊·其他" ? "工作·项目" : c.category_model;
+    x.a.category_reason = c.reason;
+    if (c.looks_like_media === true && x.life !== "media" && !hasMoney(x.a)) x.life = "media";
+  }
+  for (const card of digest.cards || []) {
+    if (!DIGEST_KINDS.has(card.kind)) continue;
+    const members = (card.activity_ids || []).map(id => byId.get(id)).filter(x => x && x.life === "live" && x.minute != null && catOf(x.a) !== WORK_LABEL);
+    if (members.length < 2 || members.some(x => x.digest)) continue;
+    members.sort((p, q) => p.minute - q.minute);
+    const view = {card, members, key: `digest-${members[0].a.activity_id}`};
+    members.forEach((x, index) => { x.digest = view; x.digestLead = index === 0; });
+  }
+}
+
+function digestTime(card, members) {
+  const parts = iso => { const v = iso ? localParts(iso) : null; return v ? v.minute : null; };
+  const from = parts(card.start) ?? members[0].minute, to = parts(card.end) ?? members[members.length - 1].minute;
+  const range = from === to ? fmt(from) : `${fmt(from)}–${fmt(to)}`;
+  const minutes = card.duration_minutes == null ? "" : ` · 约 ${Math.round(card.duration_minutes)} 分钟`;
+  return `${range}${minutes}${card.time_basis === "spoken" ? "（按说话时间，不代表实际时长）" : ""}`;
+}
+
+/** 备注里的校验说明是给程序看的，只留“第二组”“几组”这种人话。 */
+function digestNote(note) {
+  return String(note || "").split(/[；;]/).map(part => part.trim())
+    .filter(part => part && !/原话|完成状态|未说明|不填|completed|sets|reps|受阻|器械名称/i.test(part)).join("；");
+}
+
+function digestCardHtml(view) {
+  const {card, members, key} = view;
+  const open = state.expanded.has(key) || members.some(x => state.open.has(x.a.activity_id));
+  const color = catColor(catOf(members[0].a));
+  const details = (card.details || []).map(d => {
+    const facts = [d.sets != null ? `${d.sets} 组` : "", d.reps != null ? `${d.reps} 次` : "", d.weight || "", digestNote(d.note)].filter(Boolean).join(" · ");
+    return `<li><strong>${esc(d.name || "未说明")}</strong>${facts ? `<span>${esc(facts)}</span>` : ""}</li>`;
+  }).join("");
+  return `<article class="a-card digest" style="--card:${color}">
+    <header class="a-card-head"><i class="dot" style="background:${color}"></i><strong>${esc(card.title)}</strong></header>
+    <p class="digest-time tnum">${esc(digestTime(card, members))}</p>
+    ${details ? `<ul class="digest-details">${details}</ul>` : ""}
+    <button type="button" class="fold noise" data-expand="${esc(key)}" aria-expanded="${open}">原始记录 · ${members.length} 条</button>
+    ${open ? `<ul class="rows">${members.map(rowHtml).join("")}</ul>` : ""}
+  </article>`;
+}
+
+function groupCards(list) {
+  const cards = new Map();
+  for (const x of list) {
+    const label = isFragmentNoise(x.a) ? "零碎片段" : (x.life === "media" ? "媒体内容" : (x.life === "unknown" ? "待确认" : String(catOf(x.a) || "其他")));
+    if (!cards.has(label)) cards.set(label, {label, life: x.life, rows: []});
+    cards.get(label).rows.push(x);
+  }
+  const first = card => { const m = card.rows.find(x => x.minute != null); return m ? m.minute : Infinity; };
+  return [...cards.values()].sort((p, q) => first(p) - first(q));
+}
+
+function cardRange(rows) {
+  const minutes = rows.map(x => x.minute).filter(m => m != null);
+  if (!minutes.length) return "时间未定";
+  const lo = Math.min(...minutes), hi = Math.max(...minutes);
+  return lo === hi ? fmt(lo) : `${fmt(lo)}–${fmt(hi)}`;
+}
+
+function cardHtml(key, card) {
+  const showAll = state.expanded.has(key) || card.rows.some(x => state.open.has(x.a.activity_id));
+  const shown = showAll ? card.rows : card.rows.slice(0, CARD_PREVIEW);
+  const color = card.life === "live" ? catColor(card.label) : "#c5cad2";
+  const rest = card.rows.length - shown.length;
+  if (card.rows.length === 1) return `<article class="a-card single" style="--card:${color}"><ul class="rows">${rowHtml(card.rows[0])}</ul></article>`;
+  return `<article class="a-card" style="--card:${color}">
+    <header class="a-card-head"><i class="dot" style="background:${color}"></i><strong>${esc(card.label)}</strong><span class="count tnum">${esc(cardRange(card.rows))} · ${card.rows.length} ${card.label === "零碎片段" ? "条" : "件"}</span></header>
+    <ul class="rows">${shown.map(rowHtml).join("")}</ul>
+    ${rest > 0 ? `<button type="button" class="fold" data-expand="${esc(key)}">再显示 ${rest} 件</button>` : ""}
+  </article>`;
+}
+
+/** 场景是按声音粗合并的；已经有不少本人活动时，不能再说“无对话”。 */
+function sceneLabel(label, list) {
+  const live = list.filter(x => x.life === "live" && !isFragmentNoise(x.a)).length;
+  return /无对话|安静少言/.test(String(label)) && live >= 3 ? "日常活动" : label;
+}
+
+function rowsBlock(key, list) {
+  if (state.cleanLive) {
+    let pool;
+    if (state.filter === "live") {
+      pool = list.filter(x => x.life === "live" && !isFragmentNoise(x.a) && foldReason(x) !== WORK_LABEL && catOf(x.a) !== WORK_LABEL);
+    } else if (state.filter === "work") {
+      pool = list.filter(x => x.life === "live" && (foldReason(x) === WORK_LABEL || catOf(x.a) === WORK_LABEL));
+    } else if (state.filter === "media") {
+      pool = list.filter(x => x.life === "media");
+    } else if (state.filter === "unknown") {
+      pool = list.filter(x => x.life === "unknown" || (x.life === "live" && isFragmentNoise(x.a)));
+    } else {
+      pool = list;
+    }
+    const filtered = state.cat ? pool.filter(x => catOf(x.a) === state.cat) : pool;
+    if (!filtered.length) return "";
+    const showDigests = state.filter === "live" && !state.cat;
+    const main = showDigests ? filtered.filter(x => !x.digest) : filtered;
+    const digests = showDigests ? filtered.filter(x => x.digestLead).map(x => digestCardHtml(x.digest)).join("") : "";
+    return digests + groupCards(main).map((card, index) => cardHtml(`${key}-c${index}`, card)).join("");
+  }
+  const byLife = state.filter === "live" ? list.filter(x => x.life === "live" || x.a.looks_like_fragment === true) : (state.filter === "all" ? list : list.filter(x => x.life === state.filter));
+  const filtered = state.cat ? byLife.filter(x => catOf(x.a) === state.cat) : byLife;
+  // 在“我的生活”默认视图里才折叠；专门点某个分类或看“全部”时照常显示。
+  const folding = state.filter === "live" && !state.cat;
+  const folded = folding ? filtered.filter(x => foldReason(x)) : [];
+  const main = folding ? filtered.filter(x => !foldReason(x) && !x.digest) : filtered;
+  const digests = folding ? filtered.filter(x => x.digestLead && !foldReason(x)).map(x => digestCardHtml(x.digest)).join("") : "";
+  const cardsForMain = groupCards(main);
+  let out = digests + cardsForMain.map((card, index) => cardHtml(`${key}-c${index}`, card)).join("");
+  const noise = state.filter === "live" ? list.filter(x => x.life !== "live" && x.a.looks_like_fragment !== true) : [];
+  if (folded.length && noise.length) {
+    const foldKey = `${key}-work-noise`, noiseKey = `${key}-noise`;
+    const combined = [...folded, ...noise];
+    const open = state.expanded.has(foldKey) || state.expanded.has(noiseKey) || combined.some(x => state.open.has(x.a.activity_id));
+    const work = folded.filter(x => foldReason(x) === WORK_LABEL).length, bits = folded.length - work;
+    const u = noise.filter(x => x.life === "unknown").length, m = noise.length - u;
+    const summary = [
+      work ? `${WORK_LABEL} · ${work} 条` : "",
+      bits ? `零碎片段 · ${bits} 条` : "",
+      m ? `看视频/媒体 · ${m} 条媒体内容` : "",
+      u ? `${u} 条待确认` : "",
+    ].filter(Boolean).join(" · ");
+    out += `<button type="button" class="fold noise" data-expand="${esc(foldKey)}" aria-expanded="${open}">${summary}</button>`;
+    if (open) out += groupCards(combined).map((card, index) => cardHtml(`${foldKey}-c${index}`, card)).join("");
+  } else if (folded.length) {
+    const foldKey = `${key}-work-noise`;
+    const open = state.expanded.has(foldKey) || folded.some(x => state.open.has(x.a.activity_id));
+    const work = folded.filter(x => foldReason(x) === WORK_LABEL).length, bits = folded.length - work;
+    out += `<button type="button" class="fold noise" data-expand="${esc(foldKey)}" aria-expanded="${open}">${[work ? `${WORK_LABEL} · ${work} 条` : "", bits ? `零碎片段 · ${bits} 条` : ""].filter(Boolean).join(" · ")}</button>`;
+    if (open) out += groupCards(folded).map((card, index) => cardHtml(`${foldKey}-c${index}`, card)).join("");
+  } else if (noise.length) {
+    // 媒体和待确认不占位置，折成一行；模型可能判错，所以点开还能看到。
+    const u = noise.filter(x => x.life === "unknown").length, m = noise.length - u;
+    const noiseKey = `${key}-noise`;
+    const open = state.expanded.has(noiseKey) || noise.some(x => state.open.has(x.a.activity_id));
+    out += `<button type="button" class="fold noise" data-expand="${esc(noiseKey)}" aria-expanded="${open}">${[m ? `看视频/媒体 · ${m} 条媒体内容` : "", u ? `${u} 条待确认` : ""].filter(Boolean).join(" · ")}</button>`;
+    if (open) out += groupCards(noise).map((card, index) => cardHtml(`${noiseKey}-c${index}`, card)).join("");
+  }
+  return out;
+}
+
+/** 把一段区间裁到这一小时，返回小时内的百分比位置。 */
+function hourSegments(ranges, hour) {
+  const lo = hour * 60, hi = lo + 60;
+  return ranges.map(r => ({...r, from: Math.max(r.from, lo), to: Math.min(r.to, hi)}))
+    .filter(r => r.to > r.from)
+    .map(r => ({...r, top: (r.from - lo) / 0.6, height: (r.to - r.from) / 0.6}));
+}
+
+/** 按小时排：录音、场景和事件左右对齐。连续没内容也没录音的小时折成一行，不留空白。 */
+function hourBlocks(D, nowMin) {
+  const placed = D.acts.filter(x => x.minute != null).slice();
+  if (typeof state !== "undefined" && state && state.daily && state.daily.expense_ledger && typeof localParts === "function") {
+    const actIds = new Set((D.acts || []).map(x => String(x.a && x.a.activity_id || "")));
+    for (const tx of state.daily.expense_ledger.payment_transactions || []) {
+      if (!tx || typeof tx !== "object" || tx.amount == null || !tx.time) continue;
+      const baseId = String(tx.event_id || "").split("#")[0];
+      if (baseId && actIds.has(baseId)) continue;
+      const p = localParts(tx.time);
+      if (!p || p.date !== D.date) continue;
+      const title = (typeof cleanSpendName === "function" ? cleanSpendName(tx) : String(tx.item || tx.title || "")).trim() || "消费记录";
+      placed.push({
+        life: "live",
+        minute: p.minute,
+        basis: "occurred",
+        a: {
+          activity_id: String(tx.event_id || `tx-${p.minute}`),
+          title,
+          category: "餐饮·消费",
+          status: "已完成",
+          _confirmed_amount: tx.amount,
+          items: [{
+            action: title,
+            amount: tx.amount,
+            currency: tx.currency || "CNY",
+            amount_kind: "money",
+            fact_type: "expense",
+            status: "已完成",
+          }],
+        },
+      });
+    }
+  }
+  const scenes = D.scenes.map(s => ({from: s.start_minute, to: s.end_minute, color: s.color, label: s.label, place: s.place}));
+  const rec = D.rec.map(([from, to]) => ({from, to}));
+  const lastHour = nowMin != null ? Math.floor(nowMin / 60)
+    : Math.max(-1, ...placed.map(x => Math.floor(x.minute / 60)), ...rec.map(r => Math.floor((r.to - 1) / 60)));
+  const blocks = [];
+  for (let hour = 0; hour <= Math.min(23, lastHour); hour++) {
+    const list = placed.filter(x => Math.min(23, Math.floor(x.minute / 60)) === hour).sort((p, q) => p.minute - q.minute);
+    const recSegs = hourSegments(rec, hour), sceneSegs = hourSegments(scenes, hour);
+    if (!list.length && !recSegs.length) {
+      const last = blocks[blocks.length - 1];
+      if (last && last.kind === "gap") last.to = hour + 1;
+      else blocks.push({kind: "gap", from: hour, to: hour + 1});
+      continue;
+    }
+    blocks.push({kind: "hour", hour, list, recSegs, sceneSegs});
+  }
+  return blocks;
+}
+
+function hourLabel(block) {
+  const own = a123OwnHourLabel(block);
+  if (own) return esc(own);
+  const longest = [...(block.sceneSegs || [])].sort((p, q) => q.height - p.height)[0];
+  // 只占这一小时一点点的场景不代表这一小时。
+  if (!longest || longest.height < 25) return "";
+  const labelText = sceneLabel(longest.label, block.list);
+  const place = PLACE_TEXT[longest.place];
+  const hidePlace = place === "在家" && /外出|采购|通勤|路上|店|健身|运动/.test(String(labelText));
+  return `${esc(labelText)}${place && !hidePlace ? ` · ${place}` : ""}`;
+}
+
+function a123OwnHourLabel(block) {
+  const totals = new Map(), seen = new Set();
+  const names = {work: "工作·项目 / 助手沟通", shopping: "采购 / 点餐", exercise: "运动 / 健身", life: "生活事项"};
+  for (const x of (block && block.list) || []) {
+    if (x.life !== "live") continue;
+    const a = x.a || {}, items = a.items || [];
+    for (const item of items) {
+      const physical = ["expense", "food", "exercise", "smoke"].includes(item.fact_type);
+      const work = !physical && catOf(a) === WORK_LABEL;
+      const kind = work ? "work" : (["expense", "food"].includes(item.fact_type) ? "shopping" : item.fact_type === "exercise" ? "exercise" : "life");
+      for (const e of item.evidence || []) {
+        if (e.source_label !== "self" || !e.quote) continue;
+        const key = e.source_id || e.quote;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        // Evidence-content weight, not an invented duration when occurrence time is unknown.
+        const weight = Math.min(40, String(e.quote).replace(/\s/g, "").length);
+        totals.set(kind, (totals.get(kind) || 0) + weight);
+      }
+    }
+  }
+  const ranked = [...totals].sort((a, b) => b[1] - a[1]);
+  if (!ranked.length) return "";
+  const chosen = ranked.filter(([, score], i) => i === 0 || score >= ranked[0][1] * 0.25).slice(0, 2);
+  return "本人内容：" + chosen.map(([kind]) => names[kind]).join("；");
+}
+
+function hourHtml(block, current) {
+  const start = block.hour * 60;
+  const track = (segs, cls, color) => segs.map(r => `<i class="${cls}" style="top:${r.top.toFixed(2)}%;height:${r.height.toFixed(2)}%${color ? `;background:${r.color}` : ""}" title="${esc(`${r.label ? `${r.label} ` : "有录音 "}${fmt(r.from)}–${fmt(r.to)}`)}"></i>`).join("");
+  const body = rowsBlock(`h${block.hour}`, block.list);
+  const hasMain = body.includes("<article");
+  const sceneHead = !body ? `<div class="h-scene">${[hourLabel(block), !block.list.length ? "有录音 · 未整理出活动" : ""].filter(Boolean).join(" · ")}</div>` : "";
+  return `<section class="hour${current ? " current" : ""}${hasMain ? "" : " quiet"}" data-start="${start}">
+    <div class="h-time tnum">${pad(block.hour)}:00</div>
+    <div class="h-track rec" title="左竖条：有录音时段" aria-hidden="true">${track(block.recSegs, "h-rec", false)}</div>
+    <div class="h-track sc" title="右竖条：所属场景（颜色同上方图例）" aria-hidden="true">${track(block.sceneSegs, "h-sc", true)}</div>
+    <div class="h-body">${sceneHead}${body}</div>
+  </section>`;
+}
+
+function timelineHtml(D, nowMin) {
+  const noTime = D.acts.filter(x => x.minute == null);
+  const blocks = hourBlocks(D, nowMin);
+  const hideEmptyHours = Boolean(state.cleanLive && state.filter !== "all");
+  let html = "", used = 0, procDone = nowMin == null || D.procMin == null;
+  for (const b of blocks) {
+    if (b.kind === "gap") {
+      if (!hideEmptyHours) html += `<div class="h-gap"><span class="tnum">${pad(b.from)}:00–${pad(b.to)}:00</span> 没有录音</div>`;
+      continue;
+    }
+    used += b.list.filter(x => !x.a || !x.a._confirmed_amount).length;
+    if (hideEmptyHours && !rowsBlock(`h${b.hour}`, b.list)) continue;
+    html += hourHtml(b, nowMin != null && Math.floor(nowMin / 60) === b.hour);
+    if (!procDone && D.procMin < (b.hour + 1) * 60) {
+      procDone = true;
+      html += cursorHtml("proc", D.procMin, "整理到这里", "之后的录音还在排队");
+    }
+  }
+  if (nowMin != null && !hideEmptyHours) html += cursorHtml("now", nowMin, "现在", "后面的内容会随录音继续出现");
+  if (noTime.length) {
+    used += noTime.length;
+    if (!hideEmptyHours || rowsBlock("none", noTime)) {
+      html += sceneHtml("none", "时刻", "未知", null, "时刻未知", "#a3aab3", noTime, false, -1, true);
+    }
+  }
+  if (!html && hideEmptyHours) {
+    const filterLabel = (FILTERS.find(([k]) => k === state.filter) || [,"该分类"])[1];
+    html = `<div class="state"><h2>这一天没有「${esc(filterLabel)}」记录</h2><p>对电脑说的话或媒体内容可在上方切换到「编程·工作」或「媒体内容」查看。</p></div>`;
+  }
+  return {html, used, total: D.acts.length};
+}
+
+const PLACE_TEXT = {Home: "在家", Office: "在公司", Transit: "在路上", Outside: "在外面"};
+
+function sceneHtml(key, from, to, dur, label, color, list, current, startMin, quiet, place) {
+  const placeTag = PLACE_TEXT[place] ? `<span class="place">${PLACE_TEXT[place]}</span>` : "";
+  const live = list.filter(x => x.life === "live" && !x.a.looks_like_fragment).length;
+  const body = rowsBlock(key, list);
+  const count = list.length ? `${live ? `${live} 件我的生活` : ""}${live && list.length > live ? " · " : ""}${list.length > live ? `共 ${list.length} 条` : ""}` : "";
+  return `<section class="scene${current ? " current" : ""}${quiet ? " quiet" : ""}" data-start="${startMin}" style="--dot:${color}">
+    <div class="s-time tnum">${esc(from)}—${esc(to)}${dur != null ? `<small>${esc(fmtDur(dur))}</small>` : ""}</div>
+    <div class="s-spine"><i></i></div>
+    <div class="s-body"><div class="s-head"><h2>${esc(sceneLabel(label, list))}</h2>${placeTag}<span class="count">${esc(count)}</span></div>${body}</div></section>`;
+}
+
+function cursorHtml(kind, m, label, note) {
+  return `<div class="cursor ${kind}"><div class="tnum">${fmt(m)}</div><div class="s-spine"></div><div><strong style="font-weight:500">${label}</strong> <span style="color:var(--muted);font-size:12px">${note}</span></div></div>`;
+}
+
+function noticesHtml(D) {
+  const out = [];
+  const off = D.offline;
+  if (off && off.level && off.level !== "ok") {
+    const hours = off.silent_hours != null ? Number(off.silent_hours).toFixed(1) : "?";
+    out.push(`<p class="notice${off.level === "alert" ? " alert" : ""}" data-offline="${esc(off.level)}">手表已 ${hours} 小时未上报${off.last_seen_clock ? `（上次 ${esc(off.last_seen_clock)}）` : ""}。之后的空白不代表没发生事。</p>`);
+  }
+  // [2026-11-07 改版] “正在更新/重新统计”不再整行提示，改为概览右上角的“更新中”小标记（overviewHtml）。
+  if (D.scenesPending) out.push(`<p class="notice">场景还在计算，暂时按时间排列，好了会自动更新。</p>`);
+  if (D.errors.length) out.push(`<p class="notice" data-partial="${D.errors.length}">这一天有 ${D.errors.length} 段没有整理成功，这些时段可能缺内容。</p>`);
+  const gap = state.gaps && state.gaps.days.find(r => r.date === D.date);
+  if (gap && Number(gap.gap_count) > 0) {
+    const ageH = (Date.now() - Date.parse(state.gaps.generated_at || "")) / 3600000;
+    out.push(`<p class="notice" data-gap="${Number(gap.gap_count)}">本日有 ${Number(gap.gap_count)} 行没能整理，这些原话不在下面。${ageH > 12 ? "这份统计已超过 12 小时，仅作参考。" : ""}</p>`);
+  }
+  return out.join("");
+}
+
+function catsHtml(D) {
+  let pool;
+  if (state.cleanLive) {
+    if (state.filter === "live") pool = D.acts.filter(x => x.life === "live" && !isFragmentNoise(x.a) && foldReason(x) !== WORK_LABEL && catOf(x.a) !== WORK_LABEL);
+    else if (state.filter === "all") pool = D.acts;
+    else return "";
+  } else {
+    pool = state.filter === "all" ? D.acts : D.acts.filter(x => x.life === state.filter);
+  }
+  const counts = new Map();
+  pool.forEach(x => { const c = catOf(x.a); if (c) counts.set(c, (counts.get(c) || 0) + 1); });
+  if (counts.size < 2) return "";
+  return `<nav class="cats" aria-label="分类">${[...counts].sort((p, q) => q[1] - p[1]).map(([c, n]) => `<button type="button" data-cat="${esc(c)}" aria-pressed="${state.cat === c}">${esc(c)} <span class="tnum">${n}</span></button>`).join("")}</nav>`;
+}
+
+function eventClock(ev) {
+  const t = ev.time || {};
+  return t.clock || (t.absolute ? (localParts(t.absolute) ? fmt(localParts(t.absolute).minute) : "") : "") || "时间未定";
+}
+
+function dailyField(daily, key) {
+  return (daily && daily[key]) || (daily && daily.daily_summary && daily.daily_summary[key]);
+}
+
+function eventDomId(id) { return `event-${encodeURIComponent(String(id || ""))}`; }
+
+// [2026-11-07 P2 唯一事实来源] 健身汇总：**只读后端 fitness_ledger.totals**，不在前端数 workouts。
+function fitnessSummaryText(fitnessLedger) {
+  const t = fitnessLedger && fitnessLedger.totals;
+  if (!t || typeof t !== "object") return "";
+  // 只显示**已知且非零**的量：后端的 set_count 目前恒为 0（明细里没填），
+  // 把 0 当"已知的 0"展示会变成假精确——按本项目"没有已知值就不说"的规矩跳过。
+  const bits = [];
+  // [2026-11-07 P2] 训练次数优先用后端**去重后的会话数** session_count
+  // （workout_count 是口述片段数：11-05 是 13 条片段 / 1 次训练）。
+  const sessionCount = Number(t.session_count);
+  const count = sessionCount > 0 ? sessionCount : Number(t.workout_count);
+  if (count > 0) bits.push(`${count} 次训练`);
+  if (Number(t.set_count) > 0) bits.push(`${Number(t.set_count)} 组`);
+  if (Number(t.rep_total) > 0) bits.push(`${Number(t.rep_total)} 次`);
+  if (Number(t.duration_seconds) > 0) bits.push(fmtDur(Number(t.duration_seconds) / 60));
+  return bits.length ? `后端汇总：${bits.join(" · ")}` : "";
+}
+
+// 单条训练：优先用后端给的 set_count / rep_total / volume_kg（缺失才由调用方回退到逐条事实）。
+function workoutBackendSummary(workout) {
+  if (!workout || typeof workout !== "object") return "";
+  const bits = [];
+  // 同上：0 / null 都不展示（0 组、0 次不是"已知的量"，是明细没填）
+  if (Number(workout.set_count) > 0) bits.push(`${Number(workout.set_count)} 组`);
+  if (Number(workout.rep_total) > 0) bits.push(`${Number(workout.rep_total)} 次`);
+  if (Number(workout.volume_kg) > 0) bits.push(`容量 ${Number(workout.volume_kg)} kg`);
+  if (Number(workout.duration_seconds) > 0) bits.push(fmtDur(Number(workout.duration_seconds) / 60));
+  if (!bits.length) return "";
+  return bits.join(" · ") + (workout.volume_partial ? "（部分重量未知）" : "");
+}
+
+// 从后端 fitness_ledger.workouts 里找到这条事件对应的 workout（没有就返回 null → 走旧逻辑）
+function workoutForEvent(ev) {
+  const led = state.daily && state.daily.fitness_ledger;
+  const list = led && Array.isArray(led.workouts) ? led.workouts : null;
+  if (!list || !ev) return null;
+  return list.find((w) => w && (w.event_id === ev.event_id || w.workout_id === ev.event_id)) || null;
+}
+
+function workoutTitle(ev, card) {
+  if (!card || card.kind !== "fitness") return ev.title || "";
+  const names = (card.facts || []).filter(f => /\.exercises\[\d+\]\.name$/.test(f.path || ""))
+    .map(f => String(f.value || "").trim()).filter(v => v && !["未说明", "未知", "unknown", "力量训练"].includes(v));
+  return names.length ? [...new Set(names)].join("、") : (card.title || ev.title || "");
+}
+
+function workoutFactsHtml(card, workout) {
+  if (!card || card.kind !== "fitness") return "";
+  const rows = (card.facts || []).filter(f => String(f.path || "").startsWith("data.exercise.")).map(f => {
+    const set = String(f.path).match(/\.sets\[(\d+)\]/);
+    const field = String(f.path).split(".").pop();
+    const label = ({name: "动作", body_part: "部位", weight_kg: "重量", reps: "次数", set: "组次", duration_minutes: "时长"})[field] || "训练事实";
+    const missing = f.value == null || f.value === "";
+    const value = missing ? "未记录" : `${esc(f.value)}${f.unit ? ` ${esc(f.unit)}` : ""}`;
+    const support = missing ? "" : (["model_only", "model_quote_only"].includes(f.support)
+      ? '<span class="warn-note">模型概述 · 未逐字核实</span>'
+      : f.support === "quote_verbatim" ? '<span class="group-note">逐字已证</span>'
+      : '<span class="r-note">证据强度未说明</span>');
+    const setNumber = set && (card.facts || []).find(other => other.path === String(f.path).replace(/\.[^.]+$/, ".set"));
+    const setLabel = set ? (setNumber && setNumber.value != null ? `第 ${esc(setNumber.value)} 组` : `组记录 ${Number(set[1]) + 1}`) : "";
+    return `<li>${setLabel ? `${setLabel} · ` : ""}${esc(label)}：${value} ${support}</li>`;
+  });
+  const time = card.time || {};
+  const reported = localParts(time.reported_at || (card.evidence || {}).reported_at);
+  const timing = card.retrospective || card.time_basis === "reported"
+    ? `<p class="r-note">${card.retrospective ? "回顾 · " : ""}讲述时间 ${reported ? fmt(reported.minute) : "未定"}（UTC+8），发生时间未说明。</p>`
+    : time.precision === "inferred" ? '<p class="warn-note">推断时间 · 未核实，不代表确定的发生时刻。</p>' : "";
+  // [2026-11-07 P2] 后端给了这条 workout 的汇总就用它（不再让调用方从 facts 里数）
+  const backend = (typeof workoutBackendSummary === "function") ? workoutBackendSummary(workout) : "";
+  if (backend) rows.unshift(`<li data-workout-backend-summary>${esc(backend)}</li>`);
+  return rows.length || timing ? `<div class="workout-facts" data-workout-facts>${timing}${rows.length ? `<ul>${rows.join("")}</ul>` : ""}</div>` : "";
+}
+
+function purchaseSummary(session, items) {
+  return `同次购物 · ${items.map(it => `${esc(it.item || "未命名商品")}（${it.amount == null ? "金额未说" : `提及 ${esc(moneyText(it))}`}）`).join("、")} · 付款未确认`;
+}
+
+function eventRelationsHtml(ev, daily, events) {
+  const presentation = dailyField(daily, "activity_presentation") || {};
+  const byId = new Map(events.map(e => [e.event_id, e]));
+  const targets = new Set(), notes = [];
+  for (const group of presentation.groups || []) {
+    if (!(group.member_event_ids || []).includes(ev.event_id)) continue;
+    const basis = group.basis || {};
+    let label = basis.label || "活动声明";
+    if (basis.activity_entity_verified !== true && !label.includes("未核实")) label += " · 未核实";
+    notes.push(`<span class="group-note">${esc(label)}</span>`);
+    (group.member_event_ids || []).forEach(id => { if (id !== ev.event_id) targets.add(id); });
+  }
+  for (const edge of (dailyField(daily, "activity_links") || {}).edges || []) {
+    if (["session", "recording", "order", "transaction", "receipt", "payment"].includes(String(edge.namespace || ""))) continue;
+    if (edge.from_id !== ev.event_id && edge.to_id !== ev.event_id) continue;
+    if (edge.activity_membership) notes.push('<span class="group-note">活动声明 · 未核实</span>');
+    const target = edge.from_id === ev.event_id ? edge.to_id : edge.from_id;
+    if (!edge.activity_membership || byId.has(target)) targets.add(target);
+  }
+  const links = [...targets].map(id => byId.has(id)
+    ? `<button type="button" class="event-link" data-locate-event="${esc(id)}">定位 ${esc(byId.get(id).title || "关联记录")}</button>`
+    : '<span class="r-note">目标不在本日</span>');
+  return notes.length || links.length ? `<div class="event-relations">${[...new Set(notes)].join(" ")}${links.join(" ")}</div>` : "";
+}
+
+function eventHtml(ev, daily, events, decorate) {
+  const card = (dailyField(daily, "activity_cards") || []).find(c => c.source_event_id === ev.event_id);
+  const title = workoutTitle(ev, card);
+  const unverifiedTitle = card && (card.facts || []).some(f => ["model_only", "model_quote_only"].includes(f.support) && f.value != null && String(title).includes(String(f.value)));
+  return `<li id="${esc(eventDomId(ev.event_id))}" data-event-id="${esc(ev.event_id)}"><span class="tnum">${esc(eventClock(ev))}</span> <strong>${esc(title)}</strong>${title !== ev.title ? `<span class="r-note">（原：${esc(ev.title || "")}）</span>` : ""}${unverifiedTitle ? '<span class="warn-note">模型概述 · 未逐字核实</span>' : ""}${decorate ? decorate(ev) : ""}${workoutFactsHtml(card, (typeof workoutForEvent === "function") ? workoutForEvent(ev) : null)}${eventRelationsHtml(ev, daily, events)}</li>`;
+}
+
+function eventRowsHtml(events, daily, decorate) {
+  const sessions = dailyField(daily, "purchase_sessions") || [];
+  const handled = new Set();
+  return events.map(ev => {
+    if (handled.has(ev.event_id)) return "";
+    const session = sessions.find(s => (s.member_ids || []).includes(ev.event_id));
+    const members = session ? events.filter(e => (session.member_ids || []).includes(e.event_id)) : [];
+    if (members.length < 2) { handled.add(ev.event_id); return eventHtml(ev, daily, events, decorate); }
+    const items = (session.items || []).filter(it => members.some(e => e.event_id === it.event_id));
+    members.forEach(e => handled.add(e.event_id));
+    return `<li class="purchase-session" data-purchase-session="${esc(session.session_id)}"><details><summary>${purchaseSummary(session, items)}</summary><p class="r-note">同次购物的逐笔提及，支付是否完成未确认。</p><ul>${members.map(e => eventHtml(e, daily, events, decorate)).join("")}</ul></details></li>`;
+  }).join("");
+}
+
+function captureRows(date, dashboard, events) {
+  const visible = new Set(events.filter(e => {
+    const p = localParts(e.time && e.time.absolute);
+    return !p || p.date === date;
+  }).map(e => e.event_id));
+  const rows = [], seen = new Set();
+  for (const [key, kind] of [["captured_todos", "待办线索"], ["captured_ideas", "想法线索"], ["captured_expenses", "消费线索"]]) {
+    (dashboard[key] || []).forEach((c, index) => {
+      const time = localParts(c.captured_at);
+      if (time && time.date !== date) return;
+      const ref = c.source_event_id || (c.capture_provenance || {}).source_event_id || (c.metadata || {}).source_event_id;
+      if (ref && visible.has(ref)) return;
+      const id = c.id || c.capture_id || `${key}-${index}`;
+      const unique = JSON.stringify([key, id, c.captured_at, c.raw_text, c.extracted_content]);
+      if (seen.has(unique)) return;
+      seen.add(unique);
+      rows.push({id, kind, c, clock: time ? fmt(time.minute) : "时间未定"});
+    });
+  }
+  return rows;
+}
+
+function capturesHtml(D, events) {
+  const rows = captureRows(D.date, D.captureSource || {}, events);
+  if (!rows.length) return "";
+  return `<section class="section" data-section="captures"><h3>即时抓取 · ${rows.length} 条</h3><p class="r-note">触发时刻（UTC+8），不是事情发生时刻；这些是未核实的线索。</p><ul class="capture-list">${rows.map(r => {
+    const c = r.c, p = c.capture_provenance || {};
+    const origin = c._origin === "event" ? "事件补充" : "录音触发抓取";
+    const status = p.status === "resolved" ? "来源已定位" : p.status === "conflict" ? "来源有冲突" : "来源未定位";
+    return `<li data-capture-id="${esc(r.id)}"><span class="tnum">${esc(r.clock)}</span> <span class="group-note">${esc(r.kind)} · 未核实</span><p>${esc(c.extracted_content || c.raw_text || "内容未提供")}</p>${state.quotes && c.raw_text ? `<blockquote>${esc(c.raw_text)}</blockquote>` : ""}<details><summary>抓取来源 · ${status}</summary><p>${origin}</p>${p.recording_id ? `<p>录音 ${esc(p.recording_id)}</p>` : ""}${p.segment_id ? `<p>片段 ${esc(p.segment_id)}</p>` : ""}</details></li>`;
+  }).join("")}</ul></section>`;
+}
+
+function extrasHtml(D) {
+  const parts = [];
+  const daily = state.daily;
+  if (daily && daily.expense_ledger && window.ExpenseDrilldown) {
+    parts.push(`<section class="section" data-section="expense"><h3>消费</h3>${window.ExpenseDrilldown.build(daily.expense_ledger)}</section>`);
+  } else if (state.dailyState === "failed") {
+    parts.push(`<section class="section" data-section="expense"><h3>消费</h3><p class="r-note">消费明细没读取成功，不代表这天没有消费。</p></section>`);
+  } else if (state.dailyState !== "ready") {
+    parts.push(`<section class="section" data-section="expense"><h3>消费</h3><p class="r-note">正在读取消费明细。</p></section>`);
+  }
+  if (D.highlights) parts.push(`<section class="section" data-section="brief"><details><summary>当日简报</summary><p class="brief-lines">${esc(D.highlights)}</p></details></section>`);
+  const summary = daily && daily.daily_summary;
+  const events = (daily && daily.events) || [];
+  if (events.length) {
+    // [2026-11-04 F04] 默认只列本日；time.absolute 换算 UTC+8 后不是当天的算「跨日事件」，
+    // 用户点开开关才显示，并在行尾标注它实际发生的日期与时刻。
+    const sameDayEvents = [], crossDayEvents = [];
+    // 全部按 UTC+8 判定。time.absolute 的 UTC 日期不能作依据：当天 00:00–08:00 的事件 UTC 日期是前一天。
+    const eventParts = (ev) => {
+      const abs = ev && ev.time && ev.time.absolute;
+      if (!abs) return null;
+      const local = localParts(abs);
+      if (!local) return null;
+      return {local, crossLocal: local.date !== D.date};
+    };
+    const isCrossDay = (ev) => {
+      const p = eventParts(ev);
+      return !!(p && p.crossLocal);
+    };
+    events.forEach(ev => { if (isCrossDay(ev)) crossDayEvents.push(ev); else sameDayEvents.push(ev); });
+    // 开关只决定「显示不显示」，顺序一律沿用后端给的顺序，不把跨日条目挪到末尾。
+    const shownEvents = state.crossDay ? events : events.filter(ev => !isCrossDay(ev));
+    const crossDayMark = (ev) => {
+      const p = eventParts(ev);
+      if (!p) return "";
+      if (p.crossLocal) return `<span class="group-note" data-crossday-date="local">（${+p.local.date.slice(5, 7)} 月 ${+p.local.date.slice(8, 10)} 日 ${fmt(p.local.minute)}）</span>`;
+      return "";
+    };
+    const crossDayToggle = crossDayEvents.length
+      ? `<nav class="cats" aria-label="跨日事件"><button type="button" data-crossday aria-pressed="${state.crossDay}">含跨日事件：${state.crossDay ? "开" : "关"}（${crossDayEvents.length} 条${state.crossDay ? "已列出" : "默认不列出"}）</button></nav>`
+      : "";
+    const conflicts = (dailyField(daily, "activity_presentation") || {}).conflicts || [];
+    const conflicted = new Set();
+    conflicts.forEach(c => (c.conflicted_event_ids || []).forEach(id => conflicted.add(id)));
+    parts.push(`<section class="section" data-section="events">${crossDayToggle}<details><summary>正式事件 ${shownEvents.length} 条</summary><ul>${eventRowsHtml(shownEvents, daily, ev => `${crossDayMark(ev)}${conflicted.has(ev.event_id) ? '<span class="warn-note" data-conflict="1">相关记录不一致，已分别保留供核对</span>' : ""}`)}</ul></details></section>`);
+  }
+  if (D.unassociated.length) {
+    parts.push(`<section class="section" data-section="unassociated"><details><summary>${D.unassociated.length} 条尚未归入活动</summary><ul>${D.unassociated.map(it => `<li>${esc(it.action || "")}${state.quotes && (it.evidence || [])[0] && it.evidence[0].quote ? `<small>${esc(it.evidence[0].quote)}</small>` : ""}</li>`).join("")}</ul></details></section>`);
+  }
+  parts.push(capturesHtml(D, events));
+  return parts.join("");
+}
+
+function filterCounts(D) {
+  const c = {live: 0, work: 0, media: 0, unknown: 0, all: (D && D.acts ? D.acts.length : 0)};
+  for (const x of (D && D.acts) || []) {
+    if (x.life === "media") c.media++;
+    else if (x.life === "unknown" || isFragmentNoise(x.a)) c.unknown++;
+    else if (foldReason(x) === WORK_LABEL || catOf(x.a) === WORK_LABEL) c.work++;
+    else c.live++;
+  }
+  return c;
+}
+
+function render() {
+  const D = state.data;
+  if (D) applyDigest(D, state.digest);
+  const isToday = D.date === shToday();
+  const sh = new Date(Date.now() + TZ_MS).toISOString();
+  const nowMin = isToday ? +sh.slice(11, 13) * 60 + +sh.slice(14, 16) : null;
+  const counts = state.cleanLive ? filterCounts(D) : ((D.backend_counts && typeof activityCounts === "function")
+    ? activityCounts(D)
+    : (() => { const c = {all: D.acts.length, live: 0, unknown: 0, media: 0}; D.acts.forEach(x => c[x.life]++); return c; })());
+  let body;
+  let integrity = "";
+  if (!D.acts.length && !D.scenes.length && captureRows(D.date, D.captureSource || {}, (state.daily && state.daily.events) || []).length) {
+    body = '<div class="state"><h2>这天有即时抓取线索</h2><p>尚未整理出活动，抓取内容见下方。</p></div>';
+  } else if (!D.acts.length && !D.scenes.length) {
+    body = D.status === "ready" ? `<div class="state"><h2>${D.date === shToday() ? "今天还没有活动" : "这天没有记录"}</h2><p>${D.date === shToday() ? "录音上传和整理需要时间，出门在外时可能要晚几个小时。" : "这一天没有整理出任何活动。"}</p></div>`
+      : `<div class="state"><h2>这一天还在整理</h2><p>整理完成后会出现在这里。</p></div>`;
+  } else {
+    const t = timelineHtml(D, nowMin);
+    body = t.html;
+    integrity = `已展示范围覆盖 ${t.used} / ${t.total} 条活动`;
+  }
+  const notice = noticesHtml(D);
+  app.innerHTML = `${mast(D.date)}${clocksHtml(D, nowMin)}${notice}${ribbonHtml(D, nowMin)}
+    <nav class="filters" aria-label="筛选">${FILTERS.map(([k, l]) => `<button type="button" data-filter="${k}" aria-pressed="${state.filter === k}">${l}<span class="tnum">${counts[k]}</span></button>`).join("")}</nav>
+    ${catsHtml(D)}
+    <div id="flow">${body}</div>
+    ${extrasHtml(D)}
+    <div class="tools"><button type="button" data-quotes="1">${state.quotes ? "隐藏原话" : "显示原话"}</button><button type="button" data-refresh="1">刷新这一天</button></div>
+    <footer data-integrity="${esc(integrity)}">${esc(integrity)}</footer>`;
+  bindNav();
+  postHeight();
+}
+
+function locateEvent(id) {
+  const target = document.getElementById(eventDomId(id));
+  if (!target) return;
+  for (let p = target.parentElement; p; p = p.parentElement) if (p.tagName === "DETAILS") p.open = true;
+  target.setAttribute("tabindex", "-1");
+  target.focus({preventScroll: true});
+  target.scrollIntoView({behavior: "smooth", block: "center"});
+}
+
+app.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-locate-event],[data-crossday],[data-toggle],[data-expand],[data-filter],[data-goto],[data-cat],[data-quotes],[data-refresh]");
+  if (!t) return;
+  if (t.dataset.locateEvent) { locateEvent(t.dataset.locateEvent); }
+  else if (t.dataset.crossday !== undefined) { state.crossDay = !state.crossDay; keepScroll(); }
+  else if (t.dataset.toggle) { const id = t.dataset.toggle; state.open.has(id) ? state.open.delete(id) : state.open.add(id); store.set(openKey(state.date), [...state.open].slice(-200)); keepScroll(); }
+  else if (t.dataset.cat) { state.cat = state.cat === t.dataset.cat ? "" : t.dataset.cat; keepScroll(); }
+  else if (t.dataset.quotes) { state.quotes = !state.quotes; store.set("ll.v2.quotes", state.quotes); keepScroll(); }
+  else if (t.dataset.refresh) { load(); }
+  else if (t.dataset.expand) {
+    // 媒体折叠行可以再收回去；其他“再显示”只展开。
+    if (t.dataset.expand.endsWith("-noise") && state.expanded.has(t.dataset.expand)) state.expanded.delete(t.dataset.expand);
+    else state.expanded.add(t.dataset.expand);
+    keepScroll();
+  }
+  else if (t.dataset.filter) { state.filter = t.dataset.filter; state.cat = ""; keepScroll(); }
+  else if (t.dataset.goto) {
+    const m = +t.dataset.goto;
+    const hStart = Math.floor(m / 60) * 60;
+    let el = [...app.querySelectorAll(".hour")].find(s => +s.dataset.start === hStart);
+    if (!el && state.filter !== "all") {
+      state.filter = "all";
+      state.cat = "";
+      render();
+      el = [...app.querySelectorAll(".hour")].find(s => +s.dataset.start === hStart);
+    }
+    if (el) el.scrollIntoView({behavior: "smooth", block: "start"});
+  }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && state.open.size) { state.open.clear(); store.set(openKey(state.date), []); keepScroll(); }
+});
+// 只有今天的数据还在变，隐藏时不轮询。
+setInterval(() => { if (!document.hidden && state.date === shToday() && state.data) load(true); }, 60000);
+function keepScroll() { if (!state.data) return; const y = window.scrollY; render(); window.scrollTo(0, y); }
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 模板：Life Logger 公网隧道每 5 分钟巡检守护 (com.life-logger.tunnel-keep) -->
+<!-- 注意：仅提供模板与安装命令，未经授权请勿直接安装！ -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.life-logger.tunnel-keep</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>$HOME/life-logger/scripts/tunnel_keep.sh</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>$HOME/Library/Logs/life-logger-tunnel-keep.out.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>$HOME/Library/Logs/life-logger-tunnel-keep.err.log</string>
+</dict>
+</plist>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.life-logger.bonjour</string>
+
+	<!-- 广播 _lifelogger._tcp，让 Apple Watch 能在局域网里自动发现本机。
+	     为什么需要：手表端候选地址是硬编码的（192.168.1.100 / 172.20.10.* …），
+	     热点重启或换网络后 Mac 的 IP 会变（实测 .114 → .50），手表就找不到 Mac。
+	     有了这条广播，手表用 NWBrowser 就能自己发现，与 IP 无关。
+	     服务名 "Life Logger" 与手表端 WatchMacDiscovery.serviceType 必须匹配。 -->
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/dns-sd</string>
+		<string>-R</string>
+		<string>Life Logger</string>
+		<string>_lifelogger._tcp</string>
+		<string>local</string>
+		<string>8765</string>
+	</array>
+
+	<!-- dns-sd -R 是前台常驻进程；意外退出要拉起来 -->
+	<key>KeepAlive</key>
+	<true/>
+
+	<key>RunAtLoad</key>
+	<true/>
+
+	<key>StandardOutPath</key>
+	<string>/tmp/life-logger-bonjour.log</string>
+	<key>StandardErrorPath</key>
+	<string>/tmp/life-logger-bonjour.err</string>
+</dict>
+</plist>

@@ -1,0 +1,92 @@
+{
+  "input": "/Volumes/H8精英版/RECORD",
+  "python": "/PATH/TO/.venv-funasr/bin/python",
+  "asr": "/PATH/TO/Fun-ASR-Nano-2512/snapshots/master",
+  "vad": "/PATH/TO/speech_fsmn_vad_zh-cn-16k-common-onnx",
+  "speaker": "cam++",
+  "speech_separation_model": "",
+  "moss_voiceprint": {
+    "backend": "campplus",
+    "self_threshold": 0.4,
+    "unknown_threshold": 0.3,
+    "campplus_model": "/PATH/TO/models/iic--speech_campplus_sv_zh-cn_16k-common/snapshots/master"
+  },
+  "template": "/PATH/TO/template-from-device-v2.wav",
+  "jev": {
+    "enabled_by_default": false,
+    "min_confidence": 0.72
+  },
+  "deepseek": {
+    "enabled": false,
+    "model": "deepseek-flash",
+    "base_url": "https://api.deepseek.com",
+    "api_key": ""
+  },
+  "local_llm": {
+    "enabled": false,
+    "model": "qwen2.5:7b",
+    "base_url": "http://127.0.0.1:11434",
+    "review_confidence": 0.8,
+    "timeout_seconds": 240
+  },
+  "daily_brief": {
+    "outbox_dir": "",
+    "webhook_url": ""
+  },
+  "hide_dictation_from_dashboard": true,
+  "dictation_windows_extra": [],
+  "decision_comparison": {
+    "enabled": false,
+    "providers": [
+      "jev",
+      "clef"
+    ],
+    "batch_size": 4,
+    "cloud_concurrency": 4,
+    "bypass_non_self_stream": true
+  },
+  "decision_shadow": {
+    "enabled": false,
+    "local_endpoint": "http://127.0.0.1:8000"
+  },
+  "kev": {
+    "base_url": "http://127.0.0.1:8000",
+    "model": "jaredpalmer/kev-0.8b",
+    "enabled_by_default": false,
+    "annotation_mode": "dimensions",
+    "dimension_batch_size": 1,
+    "dimension_min_confidence": 0.72,
+    "goals": [
+      "健身减脂",
+      "早睡早起",
+      "英语学习"
+    ],
+    "event_gate": false,
+    "event_gate_batch_size": 20,
+    "event_gate_timeout_seconds": 120
+  },
+  "activity_prompt": {
+    "version": "v3",
+    "mode": "live",
+    "confidence_threshold": 0.5,
+    "user_profile_path": "config/user-profile.md"
+  },
+  "ambient_anchors": {
+    "_comment": "场景判断锚点。SSID 走不通（手表需 Apple 审核 entitlement、Mac 被 macOS 14+ redact），用坐标圈 + IP 段替代。",
+    "geo": [
+      {
+        "name": "家",
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "location": "Home",
+        "radius_m": 500
+      }
+    ],
+    "ip": {
+      "192.168.43.0/24": "Transit",
+      "172.20.10.0/24": "Transit"
+    }
+  },
+  "web_version_badge_enabled": true,
+  "web_version_badge_note": "首页左下角版本角标；false 可关闭"
+}

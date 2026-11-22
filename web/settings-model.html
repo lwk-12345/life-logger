@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分阶段模型与降级链设置 · Life Logger</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body { max-width: 960px; margin: 0 auto; padding: 24px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg, #fbfbfd); color: var(--text, #1d1d1f); }
+    .stage-card { background: #fff; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 20px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+    .stage-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f0f0f2; padding-bottom: 12px; margin-bottom: 16px; }
+    .stage-title { font-size: 18px; font-weight: 600; }
+    .stage-desc { font-size: 13px; color: #86868b; margin-top: 4px; }
+    .tier-row { display: grid; grid-template-columns: 90px 1fr 1fr 140px; gap: 12px; align-items: center; margin-bottom: 12px; }
+    .tier-label { font-weight: 600; font-size: 14px; }
+    input, select { width: 100%; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; box-sizing: border-box; }
+    button { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: #0071e3; color: #fff; transition: opacity 0.2s; }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: #e8e8ed; color: #1d1d1f; }
+    .status-msg { font-size: 12px; margin-top: 4px; }
+    .status-msg.ok { color: #34c759; }
+    .status-msg.error { color: #ff3b30; }
+    .save-bar { margin-top: 16px; display: flex; justify-content: flex-end; gap: 12px; align-items: center; }
+  </style>
+</head>
+<body>
+  <h1>分阶段模型配置与降级链管理</h1>
+  <p style="color: #6e6e73; font-size: 14px; margin-bottom: 24px;">按处理阶段为活动抽取 (extract)、日报生成 (daily) 和类别判断 (classify) 分配独立的主模型与备用降级链。未覆盖时自动回退全局 DeepSeek 配置。</p>
+
+  <div id="stagesContainer">加载中...</div>
+
+  <script>
+    const STAGE_LABELS = {
+      extract: { name: "1. 活动抽取 (Extract)", desc: "负责 10 分钟窗口录音转写分析、候选事件抽取及近场判定。" },
+      daily: { name: "2. 宏观日报 (Daily Synthesis)", desc: "负责全天事实汇总、认知洞察与健康/运动/消费宏观综述生成。" },
+      classify: { name: "3. 意图与类别分类 (Classify)", desc: "负责事件类别打标、纠错意图识别与场景分类。" }
+    };
+
+    let CURRENT_STAGES = {};
+    let GLOBAL_DEEPSEEK = {};
+
+    async function loadSettings() {
+      try {
+        const res = await fetch("/api/settings/stage-models");
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || "读取失败");
+        CURRENT_STAGES = data.stages;
+        GLOBAL_DEEPSEEK = data.global_deepseek;
+        renderStages();
+      } catch (err) {
+        document.getElementById("stagesContainer").innerHTML = `<div style="color: red;">加载配置失败: ${err.message}</div>`;
+      }
+    }
+
+    function renderStages() {
+      const container = document.getElementById("stagesContainer");
+      container.innerHTML = "";
+
+      for (const [stage, meta] of Object.entries(STAGE_LABELS)) {
+        const stageData = CURRENT_STAGES[stage] || {};
+        const cfg = stageData.config || {};
+        const tiers = { primary: cfg.primary || {}, tier2: cfg.tier2 || {}, fallback: cfg.fallback || {} };
+
+        const card = document.createElement("div");
+        card.className = "stage-card";
+        card.innerHTML = `
+          <div class="stage-header">
+            <div>
+              <div class="stage-title">${meta.name}</div>
+              <div class="stage-desc">${meta.desc}</div>
+            </div>
+          </div>
+          ${["primary", "tier2", "fallback"].map(tier => {
+            const tierConf = tiers[tier] || {};
+            const tierTitle = tier === "primary" ? "主模型" : (tier === "tier2" ? "备用二档" : "三级兜底");
+            return `
+              <div class="tier-row" id="row-${stage}-${tier}">
+                <div class="tier-label">${tierTitle}</div>
+                <div>
+                  <input type="text" id="model-${stage}-${tier}" placeholder="模型名称 (如 deepseek-chat)" value="${tierConf.model || ""}" />
+                </div>
+                <div>
+                  <input type="text" id="url-${stage}-${tier}" placeholder="API Base URL (如 http://127.0.0.1:3425/v1)" value="${tierConf.base_url || ""}" />
+                </div>
+                <div>
+                  <button type="button" class="secondary" onclick="testConnectivity('${stage}', '${tier}')">测试连通性</button>
+                </div>
+              </div>
+              <div class="status-msg" id="status-${stage}-${tier}" style="margin-left: 102px; margin-bottom: 8px;"></div>
+            `;
+          }).join("")}
+          <div class="save-bar">
+            <span class="status-msg" id="save-status-${stage}"></span>
+            <button type="button" onclick="saveStage('${stage}')">保存该阶段配置</button>
+          </div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    async function testConnectivity(stage, tier) {
+      const statusEl = document.getElementById(`status-${stage}-${tier}`);
+      const model = document.getElementById(`model-${stage}-${tier}`).value.trim();
+      const baseUrl = document.getElementById(`url-${stage}-${tier}`).value.trim();
+      statusEl.className = "status-msg";
+      statusEl.innerText = "正在探测...";
+
+      try {
+        const res = await fetch("/api/settings/stage-models/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage, tier, model, base_url: baseUrl })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          statusEl.className = "status-msg ok";
+          statusEl.innerText = `✓ 连通正常 (${data.model_reported || model})`;
+        } else {
+          statusEl.className = "status-msg error";
+          statusEl.innerText = `✕ 探测失败: ${data.error || data.message}`;
+        }
+      } catch (err) {
+        statusEl.className = "status-msg error";
+        statusEl.innerText = `✕ 探测异常: ${err.message}`;
+      }
+    }
+
+    async function saveStage(stage) {
+      const saveStatus = document.getElementById(`save-status-${stage}`);
+      saveStatus.className = "status-msg";
+      saveStatus.innerText = "保存中...";
+
+      const updates = {};
+      for (const tier of ["primary", "tier2", "fallback"]) {
+        const model = document.getElementById(`model-${stage}-${tier}`).value.trim();
+        const baseUrl = document.getElementById(`url-${stage}-${tier}`).value.trim();
+        if (model || baseUrl) {
+          updates[tier] = { model, base_url: baseUrl, enabled: true };
+        } else {
+          updates[tier] = null;
+        }
+      }
+
+      try {
+        const res = await fetch("/api/settings/stage-models", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage, updates })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          saveStatus.className = "status-msg ok";
+          saveStatus.innerText = "✓ 配置已保存";
+          setTimeout(() => { saveStatus.innerText = ""; }, 3000);
+        } else {
+          saveStatus.className = "status-msg error";
+          saveStatus.innerText = `✕ 保存失败: ${data.error}`;
+        }
+      } catch (err) {
+        saveStatus.className = "status-msg error";
+        saveStatus.innerText = `✕ 保存异常: ${err.message}`;
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", loadSettings);
+  </script>
+</body>
+</html>

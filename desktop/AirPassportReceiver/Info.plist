@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_CN</string>
+    <key>CFBundleExecutable</key>
+    <string>AirPassport</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.lifelogger.AirPassport</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>AirPassport</string>
+    <key>CFBundleDisplayName</key>
+    <string>AirPassport</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>AirPassport 需要访问蓝牙以连接硬件 PTT 麦克风按键及接收低延迟音频流。</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>AirPassport 需要访问蓝牙以连接硬件 PTT 麦克风设备。</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>AirPassport 需要麦克风访问权限以支持音频采集与虚拟麦克风推流。</string>
+    <key>NSAppleEventsUsageDescription</key>
+    <string>AirPassport 需要辅助功能与事件权限以模拟键盘快捷键触发。</string>
+    <key>NSSystemAdministrationUsageDescription</key>
+    <string>AirPassport 需要系统权限以配置全局快捷键与音频服务。</string>
+    <!-- [2026-10-02] 今日待办需要读取 Life Logger 本地服务（http://127.0.0.1:8765/api/reminders）。
+         该服务可能只绑定在受信私网地址（本机当前为 172.20.10.3），属于「本地网络」访问，
+         macOS 15+ 会弹权限询问；本键提供中文说明文案，缺失时系统只给通用提示。 -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>AirPassport 需要访问本地网络，以从 Life Logger 读取今日待办并显示到徽章上。</string>
+</dict>
+</plist>

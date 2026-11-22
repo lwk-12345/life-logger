@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 模板：Life Logger 每日 09:00 晨间验证日终日报定时生成守护 (com.life-logger.nightly-verify) -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.life-logger.nightly-verify</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>__REPO__/scripts/verify_nightly_daily.sh</string>
+    </array>
+
+    <!-- 每天早晨 09:00 自动巡检前一天日报 -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/Library/Logs/life-logger-nightly-verify.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/Library/Logs/life-logger-nightly-verify.log</string>
+</dict>
+</plist>

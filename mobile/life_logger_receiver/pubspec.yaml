@@ -1,0 +1,18 @@
+name: life_logger_receiver
+description: Local-first AI Passport receiver and Life Logger Mac outbox.
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

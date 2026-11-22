@@ -1,0 +1,351 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		044A099083EF5B0A1A04C725 /* WatchRecordingCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 353291630AF7877E10C97817 /* WatchRecordingCoordinator.swift */; };
+		0C4FB5FD59AB2A580605FE3A /* MacSyncSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FFA6F33C5609CA1A1C9BFB /* MacSyncSettingsView.swift */; };
+		0C94F3C308A8E39F35189CB1 /* WatchCaptureProtectionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D9B6621433535D407BFA85 /* WatchCaptureProtectionPolicy.swift */; };
+		0DB69803B584793CEE1B61A8 /* SegmentLedger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7A9EFAFC39DD7C93556BFA6 /* SegmentLedger.swift */; };
+		0E79AA2A1B8DE5D3C769CC9B /* WatchSyncFollowUpPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50400BB4284A8C8AA114927C /* WatchSyncFollowUpPolicy.swift */; };
+		18C1624E94657AE004E5693F /* LifeLoggerWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC21342FF648E4EF85D240E /* LifeLoggerWatchApp.swift */; };
+		22D80D4B290F5FD3A7E632DC /* WatchSyncStatusPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4D04A3168E9FBF1307B5A3B /* WatchSyncStatusPolicy.swift */; };
+		3B7B0734479635046C24E755 /* WatchLocationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2025CA100556EA7E8DA38C36 /* WatchLocationPolicy.swift */; };
+		3D569201E0044589B565996F /* WatchSegmentRecoveryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F030CDC1ED4D4C4F4D1867F /* WatchSegmentRecoveryPolicy.swift */; };
+		3EAB8B23E399C9700CEF54BC /* WatchDailySteps.swift in Sources */ = {isa = PBXBuildFile; fileRef = C54CD2D245FA1D84DABB8806 /* WatchDailySteps.swift */; };
+		474C8D622A14EA9301DFF166 /* CaptureSegmentDisposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41FB76B40733E20D9DE91FA0 /* CaptureSegmentDisposition.swift */; };
+		4E5DE89B8C918D1E85D49924 /* WatchCaptureResumePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8C6512604861638045E19B /* WatchCaptureResumePolicy.swift */; };
+		53CE1122FE67F86126D2AEE0 /* CaptureStopDisposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7415B54B19A3B17E11D9545 /* CaptureStopDisposition.swift */; };
+		55087C351CD9D058163648A8 /* WatchMacEndpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5127ACFD5AFD08072380E73B /* WatchMacEndpoint.swift */; };
+		62859B9EEFD024430D93EC8B /* WatchCaptureRecoveryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D57BD4541189F4E578A48BD /* WatchCaptureRecoveryPolicy.swift */; };
+		6F49A112BB6E1BCDF52BB10E /* WatchUploadCredential.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C703EC24AAD931C8D951C38 /* WatchUploadCredential.swift */; };
+		79316016FB670945A86B8980 /* WatchGesturePinPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B54FEB2916D1DFB54972D1A7 /* WatchGesturePinPolicy.swift */; };
+		7D5CA741FE9577FC0E6E2536 /* WatchHealthSnapshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F1D9BE2848D5B66861BF1EF /* WatchHealthSnapshotManager.swift */; };
+		820D226B87833D3B1700F613 /* WatchSleepSummarizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4C6406C928D68E15069E9B /* WatchSleepSummarizer.swift */; };
+		82355C916759EF58403CB372 /* MacWatchSessionTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407C099828A017178C9ABF42 /* MacWatchSessionTransport.swift */; };
+		84876585F0C1C619E3CF9B31 /* WatchCompletionRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA2F8B2CA224BEC44E2FEE22 /* WatchCompletionRequest.swift */; };
+		93FE65AB8615237A57B79734 /* WatchNowPlayingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = DED25973EAE7248E85381B86 /* WatchNowPlayingSession.swift */; };
+		9E9FC538C599F502B586491F /* WatchMacDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A9E482C1F97BD5ABB9E4859 /* WatchMacDiscovery.swift */; };
+		A20C0DFBC4E9EC4720A7F504 /* WatchCaptureNetworkGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1A2DDE0F431BF061E0D2F6 /* WatchCaptureNetworkGate.swift */; };
+		AF6ABDB13185F116EDDAFA3E /* WatchContinuousAudioCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = D061778000DB558458D8D7FB /* WatchContinuousAudioCapture.swift */; };
+		C293C08966CACAA613DB3944 /* RecorderHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0171BD451BC26B96FB99C641 /* RecorderHomeView.swift */; };
+		C335D4EB24307762007FF77B /* WatchCompletionQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = C60ADB1749CEB2B324445F14 /* WatchCompletionQueue.swift */; };
+		C4A5A67BB32A239572B44F07 /* WatchSyncEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BF3139F18A96B1205BF52E7 /* WatchSyncEngine.swift */; };
+		CBBD4A856396D9366988C1FB /* WatchMeterModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2830FA9448BECDA5BDE3B191 /* WatchMeterModel.swift */; };
+		CFFF7B536220A5FBDF6FDF26 /* WatchStagedAudioPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEDF828B9D823B9162C2D98 /* WatchStagedAudioPolicy.swift */; };
+		D81FAC094BD17771E1B53F7D /* WatchQuarantinePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 212E50F6BF8C798F1A3FFE1A /* WatchQuarantinePolicy.swift */; };
+		E15CC30A417B9D4AFF0F1A7F /* WatchLocationSnapshotManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29C2790EFB428D336108C34 /* WatchLocationSnapshotManager.swift */; };
+		E184E64AC061FA55211B9647 /* WatchSegmentTimingPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C4E35E37FB46024A9890662 /* WatchSegmentTimingPolicy.swift */; };
+		E5BD4FF223F8E6AC8EFECED0 /* WatchCaptureEventLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 629C2FD99ABB0EFC556ED992 /* WatchCaptureEventLog.swift */; };
+		E6A678D2FDDEFF8ED7964A6C /* WatchCaptureRuntimePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65543A3D49B4F6AC3ACF8D43 /* WatchCaptureRuntimePolicy.swift */; };
+		E7FD25E16C177AEEBF912166 /* WatchCaptureSessionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DCE478FC75698C96D265853 /* WatchCaptureSessionPolicy.swift */; };
+		F46D6148F0A234F9CB49287A /* WatchHealthResponsePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FF0F7AB2BAAFF0368ADF55 /* WatchHealthResponsePolicy.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0171BD451BC26B96FB99C641 /* RecorderHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecorderHomeView.swift; sourceTree = "<group>"; };
+		0C4E35E37FB46024A9890662 /* WatchSegmentTimingPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSegmentTimingPolicy.swift; sourceTree = "<group>"; };
+		0C703EC24AAD931C8D951C38 /* WatchUploadCredential.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchUploadCredential.swift; sourceTree = "<group>"; };
+		0D57BD4541189F4E578A48BD /* WatchCaptureRecoveryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureRecoveryPolicy.swift; sourceTree = "<group>"; };
+		1D4C6406C928D68E15069E9B /* WatchSleepSummarizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSleepSummarizer.swift; sourceTree = "<group>"; };
+		2025CA100556EA7E8DA38C36 /* WatchLocationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLocationPolicy.swift; sourceTree = "<group>"; };
+		212E50F6BF8C798F1A3FFE1A /* WatchQuarantinePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchQuarantinePolicy.swift; sourceTree = "<group>"; };
+		2830FA9448BECDA5BDE3B191 /* WatchMeterModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMeterModel.swift; sourceTree = "<group>"; };
+		2BF3139F18A96B1205BF52E7 /* WatchSyncEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncEngine.swift; sourceTree = "<group>"; };
+		2F1A2DDE0F431BF061E0D2F6 /* WatchCaptureNetworkGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureNetworkGate.swift; sourceTree = "<group>"; };
+		353291630AF7877E10C97817 /* WatchRecordingCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRecordingCoordinator.swift; sourceTree = "<group>"; };
+		3FF1BC879D4CA4D71C98DC01 /* LifeLoggerWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LifeLoggerWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		407C099828A017178C9ABF42 /* MacWatchSessionTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchSessionTransport.swift; sourceTree = "<group>"; };
+		41FB76B40733E20D9DE91FA0 /* CaptureSegmentDisposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSegmentDisposition.swift; sourceTree = "<group>"; };
+		42FF0F7AB2BAAFF0368ADF55 /* WatchHealthResponsePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHealthResponsePolicy.swift; sourceTree = "<group>"; };
+		4A9E482C1F97BD5ABB9E4859 /* WatchMacDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMacDiscovery.swift; sourceTree = "<group>"; };
+		50400BB4284A8C8AA114927C /* WatchSyncFollowUpPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncFollowUpPolicy.swift; sourceTree = "<group>"; };
+		5127ACFD5AFD08072380E73B /* WatchMacEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMacEndpoint.swift; sourceTree = "<group>"; };
+		629C2FD99ABB0EFC556ED992 /* WatchCaptureEventLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureEventLog.swift; sourceTree = "<group>"; };
+		65543A3D49B4F6AC3ACF8D43 /* WatchCaptureRuntimePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureRuntimePolicy.swift; sourceTree = "<group>"; };
+		66D9B6621433535D407BFA85 /* WatchCaptureProtectionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureProtectionPolicy.swift; sourceTree = "<group>"; };
+		6AEDF828B9D823B9162C2D98 /* WatchStagedAudioPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStagedAudioPolicy.swift; sourceTree = "<group>"; };
+		7DCE478FC75698C96D265853 /* WatchCaptureSessionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureSessionPolicy.swift; sourceTree = "<group>"; };
+		7F030CDC1ED4D4C4F4D1867F /* WatchSegmentRecoveryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSegmentRecoveryPolicy.swift; sourceTree = "<group>"; };
+		8F1D9BE2848D5B66861BF1EF /* WatchHealthSnapshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchHealthSnapshotManager.swift; sourceTree = "<group>"; };
+		A9FFA6F33C5609CA1A1C9BFB /* MacSyncSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSyncSettingsView.swift; sourceTree = "<group>"; };
+		B54FEB2916D1DFB54972D1A7 /* WatchGesturePinPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchGesturePinPolicy.swift; sourceTree = "<group>"; };
+		B7A9EFAFC39DD7C93556BFA6 /* SegmentLedger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentLedger.swift; sourceTree = "<group>"; };
+		BA2F8B2CA224BEC44E2FEE22 /* WatchCompletionRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompletionRequest.swift; sourceTree = "<group>"; };
+		C54CD2D245FA1D84DABB8806 /* WatchDailySteps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDailySteps.swift; sourceTree = "<group>"; };
+		C60ADB1749CEB2B324445F14 /* WatchCompletionQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompletionQueue.swift; sourceTree = "<group>"; };
+		D061778000DB558458D8D7FB /* WatchContinuousAudioCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContinuousAudioCapture.swift; sourceTree = "<group>"; };
+		D29C2790EFB428D336108C34 /* WatchLocationSnapshotManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLocationSnapshotManager.swift; sourceTree = "<group>"; };
+		D4D04A3168E9FBF1307B5A3B /* WatchSyncStatusPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncStatusPolicy.swift; sourceTree = "<group>"; };
+		D7415B54B19A3B17E11D9545 /* CaptureStopDisposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureStopDisposition.swift; sourceTree = "<group>"; };
+		DEC21342FF648E4EF85D240E /* LifeLoggerWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeLoggerWatchApp.swift; sourceTree = "<group>"; };
+		DED25973EAE7248E85381B86 /* WatchNowPlayingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNowPlayingSession.swift; sourceTree = "<group>"; };
+		DF8C6512604861638045E19B /* WatchCaptureResumePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureResumePolicy.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		257C7DEDFFCAA2AA357AA516 /* CorePackage */ = {
+			isa = PBXGroup;
+			children = (
+				FD6E986744ABFAFAE6E97CC5 /* Sources */,
+			);
+			path = CorePackage;
+			sourceTree = "<group>";
+		};
+		5BD108362EE23E2E83228F5F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				DEC21342FF648E4EF85D240E /* LifeLoggerWatchApp.swift */,
+				A9FFA6F33C5609CA1A1C9BFB /* MacSyncSettingsView.swift */,
+				407C099828A017178C9ABF42 /* MacWatchSessionTransport.swift */,
+				0171BD451BC26B96FB99C641 /* RecorderHomeView.swift */,
+				629C2FD99ABB0EFC556ED992 /* WatchCaptureEventLog.swift */,
+				C60ADB1749CEB2B324445F14 /* WatchCompletionQueue.swift */,
+				D061778000DB558458D8D7FB /* WatchContinuousAudioCapture.swift */,
+				8F1D9BE2848D5B66861BF1EF /* WatchHealthSnapshotManager.swift */,
+				D29C2790EFB428D336108C34 /* WatchLocationSnapshotManager.swift */,
+				2830FA9448BECDA5BDE3B191 /* WatchMeterModel.swift */,
+				DED25973EAE7248E85381B86 /* WatchNowPlayingSession.swift */,
+				353291630AF7877E10C97817 /* WatchRecordingCoordinator.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		689D483C31D0723BD843D648 /* WatchCore */ = {
+			isa = PBXGroup;
+			children = (
+				41FB76B40733E20D9DE91FA0 /* CaptureSegmentDisposition.swift */,
+				D7415B54B19A3B17E11D9545 /* CaptureStopDisposition.swift */,
+				B7A9EFAFC39DD7C93556BFA6 /* SegmentLedger.swift */,
+				2F1A2DDE0F431BF061E0D2F6 /* WatchCaptureNetworkGate.swift */,
+				66D9B6621433535D407BFA85 /* WatchCaptureProtectionPolicy.swift */,
+				0D57BD4541189F4E578A48BD /* WatchCaptureRecoveryPolicy.swift */,
+				DF8C6512604861638045E19B /* WatchCaptureResumePolicy.swift */,
+				65543A3D49B4F6AC3ACF8D43 /* WatchCaptureRuntimePolicy.swift */,
+				7DCE478FC75698C96D265853 /* WatchCaptureSessionPolicy.swift */,
+				BA2F8B2CA224BEC44E2FEE22 /* WatchCompletionRequest.swift */,
+				C54CD2D245FA1D84DABB8806 /* WatchDailySteps.swift */,
+				B54FEB2916D1DFB54972D1A7 /* WatchGesturePinPolicy.swift */,
+				42FF0F7AB2BAAFF0368ADF55 /* WatchHealthResponsePolicy.swift */,
+				2025CA100556EA7E8DA38C36 /* WatchLocationPolicy.swift */,
+				4A9E482C1F97BD5ABB9E4859 /* WatchMacDiscovery.swift */,
+				5127ACFD5AFD08072380E73B /* WatchMacEndpoint.swift */,
+				212E50F6BF8C798F1A3FFE1A /* WatchQuarantinePolicy.swift */,
+				7F030CDC1ED4D4C4F4D1867F /* WatchSegmentRecoveryPolicy.swift */,
+				0C4E35E37FB46024A9890662 /* WatchSegmentTimingPolicy.swift */,
+				1D4C6406C928D68E15069E9B /* WatchSleepSummarizer.swift */,
+				6AEDF828B9D823B9162C2D98 /* WatchStagedAudioPolicy.swift */,
+				2BF3139F18A96B1205BF52E7 /* WatchSyncEngine.swift */,
+				50400BB4284A8C8AA114927C /* WatchSyncFollowUpPolicy.swift */,
+				D4D04A3168E9FBF1307B5A3B /* WatchSyncStatusPolicy.swift */,
+				0C703EC24AAD931C8D951C38 /* WatchUploadCredential.swift */,
+			);
+			path = WatchCore;
+			sourceTree = "<group>";
+		};
+		93705010D63372C12B483A35 = {
+			isa = PBXGroup;
+			children = (
+				5BD108362EE23E2E83228F5F /* App */,
+				257C7DEDFFCAA2AA357AA516 /* CorePackage */,
+				C7AE6B8B2DAA8AC32FE15794 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C7AE6B8B2DAA8AC32FE15794 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3FF1BC879D4CA4D71C98DC01 /* LifeLoggerWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FD6E986744ABFAFAE6E97CC5 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				689D483C31D0723BD843D648 /* WatchCore */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BA372CA92F46A90091D72E54 /* LifeLoggerWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4C43C31ABB51ADAE1F21972A /* Build configuration list for PBXNativeTarget "LifeLoggerWatch" */;
+			buildPhases = (
+				80EACCBE74A825B3E6EA589F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LifeLoggerWatch;
+			packageProductDependencies = (
+			);
+			productName = LifeLoggerWatch;
+			productReference = 3FF1BC879D4CA4D71C98DC01 /* LifeLoggerWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		C17531F7DA38F49611807632 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					BA372CA92F46A90091D72E54 = {
+						DevelopmentTeam = YOUR_APPLE_TEAM_ID;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 9AD694F63A506BBEA095EFBB /* Build configuration list for PBXProject "LifeLoggerWatch" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 93705010D63372C12B483A35;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C7AE6B8B2DAA8AC32FE15794 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BA372CA92F46A90091D72E54 /* LifeLoggerWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		80EACCBE74A825B3E6EA589F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				474C8D622A14EA9301DFF166 /* CaptureSegmentDisposition.swift in Sources */,
+				53CE1122FE67F86126D2AEE0 /* CaptureStopDisposition.swift in Sources */,
+				18C1624E94657AE004E5693F /* LifeLoggerWatchApp.swift in Sources */,
+				0C4FB5FD59AB2A580605FE3A /* MacSyncSettingsView.swift in Sources */,
+				82355C916759EF58403CB372 /* MacWatchSessionTransport.swift in Sources */,
+				C293C08966CACAA613DB3944 /* RecorderHomeView.swift in Sources */,
+				0DB69803B584793CEE1B61A8 /* SegmentLedger.swift in Sources */,
+				E5BD4FF223F8E6AC8EFECED0 /* WatchCaptureEventLog.swift in Sources */,
+				A20C0DFBC4E9EC4720A7F504 /* WatchCaptureNetworkGate.swift in Sources */,
+				0C94F3C308A8E39F35189CB1 /* WatchCaptureProtectionPolicy.swift in Sources */,
+				62859B9EEFD024430D93EC8B /* WatchCaptureRecoveryPolicy.swift in Sources */,
+				4E5DE89B8C918D1E85D49924 /* WatchCaptureResumePolicy.swift in Sources */,
+				E6A678D2FDDEFF8ED7964A6C /* WatchCaptureRuntimePolicy.swift in Sources */,
+				E7FD25E16C177AEEBF912166 /* WatchCaptureSessionPolicy.swift in Sources */,
+				C335D4EB24307762007FF77B /* WatchCompletionQueue.swift in Sources */,
+				84876585F0C1C619E3CF9B31 /* WatchCompletionRequest.swift in Sources */,
+				AF6ABDB13185F116EDDAFA3E /* WatchContinuousAudioCapture.swift in Sources */,
+				3EAB8B23E399C9700CEF54BC /* WatchDailySteps.swift in Sources */,
+				79316016FB670945A86B8980 /* WatchGesturePinPolicy.swift in Sources */,
+				F46D6148F0A234F9CB49287A /* WatchHealthResponsePolicy.swift in Sources */,
+				7D5CA741FE9577FC0E6E2536 /* WatchHealthSnapshotManager.swift in Sources */,
+				3B7B0734479635046C24E755 /* WatchLocationPolicy.swift in Sources */,
+				E15CC30A417B9D4AFF0F1A7F /* WatchLocationSnapshotManager.swift in Sources */,
+				9E9FC538C599F502B586491F /* WatchMacDiscovery.swift in Sources */,
+				55087C351CD9D058163648A8 /* WatchMacEndpoint.swift in Sources */,
+				CBBD4A856396D9366988C1FB /* WatchMeterModel.swift in Sources */,
+				93FE65AB8615237A57B79734 /* WatchNowPlayingSession.swift in Sources */,
+				D81FAC094BD17771E1B53F7D /* WatchQuarantinePolicy.swift in Sources */,
+				044A099083EF5B0A1A04C725 /* WatchRecordingCoordinator.swift in Sources */,
+				3D569201E0044589B565996F /* WatchSegmentRecoveryPolicy.swift in Sources */,
+				E184E64AC061FA55211B9647 /* WatchSegmentTimingPolicy.swift in Sources */,
+				820D226B87833D3B1700F613 /* WatchSleepSummarizer.swift in Sources */,
+				CFFF7B536220A5FBDF6FDF26 /* WatchStagedAudioPolicy.swift in Sources */,
+				C4A5A67BB32A239572B44F07 /* WatchSyncEngine.swift in Sources */,
+				0E79AA2A1B8DE5D3C769CC9B /* WatchSyncFollowUpPolicy.swift in Sources */,
+				22D80D4B290F5FD3A7E632DC /* WatchSyncStatusPolicy.swift in Sources */,
+				6F49A112BB6E1BCDF52BB10E /* WatchUploadCredential.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8202BC9B3758223FFBFBF9E0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = watchos;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		9F4F3A89E8B786B8DD9FB11C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = App/LifeLoggerWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YOUR_APPLE_TEAM_ID;
+				INFOPLIST_FILE = App/WatchAppInfo.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifelogger.watch;
+				PRODUCT_NAME = LifeLoggerWatch;
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		B74427897682EB75D80BC611 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SDKROOT = watchos;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		EA1AD1F1E0BE7C1EE78DB4F4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = App/LifeLoggerWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YOUR_APPLE_TEAM_ID;
+				INFOPLIST_FILE = App/WatchAppInfo.plist;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lifelogger.watch;
+				PRODUCT_NAME = LifeLoggerWatch;
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4C43C31ABB51ADAE1F21972A /* Build configuration list for PBXNativeTarget "LifeLoggerWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EA1AD1F1E0BE7C1EE78DB4F4 /* Debug */,
+				9F4F3A89E8B786B8DD9FB11C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9AD694F63A506BBEA095EFBB /* Build configuration list for PBXProject "LifeLoggerWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B74427897682EB75D80BC611 /* Debug */,
+				8202BC9B3758223FFBFBF9E0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = C17531F7DA38F49611807632 /* Project object */;
+}

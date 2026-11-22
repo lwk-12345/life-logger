@@ -1,0 +1,76 @@
+{
+  "schema": "cigarette-price-table-v1",
+  "updated_at": "2026-11-12",
+  "policy": {
+    "read_path_network_allowed": false,
+    "priority": [
+      "1. spoken_quote: 本次原话直接说出的买烟金额",
+      "2. user_confirmed / user_reported: 用户已口头确认或历史 jev 本人报过的同品牌价格（直接回填金额，标注“你确认过的价”或“你上次买同款 X 元”）",
+      "3. reference_unconfirmed: 用户未报过的品牌，仅展示参考价并标注“参考价，待你确认”，提供 confirm_amount / edit_amount 入口，严禁计入已确认消费金额"
+    ]
+  },
+  "brands": [
+    {
+      "canonical_brand": "红塔山",
+      "aliases": ["红塔山", "红糖起", "软红塔山", "硬红塔山"],
+      "amount": 10,
+      "currency": "CNY",
+      "unit": "包",
+      "source_type": "user_reported",
+      "confirmed": true,
+      "label": "你上次买同款 10 元",
+      "detail": "从历史 jev 统计同一品牌本人报过的金额：2026-10-29、2026-11-01、2026-11-08、2026-11-11 均为 10 元/包",
+      "history_refs": [
+        {"date": "2026-10-29", "activity_id": "act_20261029_010844_store_smokes_water", "quote": "老板拿那个十块的红塔山", "amount": 10},
+        {"date": "2026-11-01", "activity_id": "act_20261101T1925_cigarette_purchase", "quote": "好吧，拿包那十块的红塔山", "amount": 10},
+        {"date": "2026-11-08", "activity_id": "act_cigarette_purchase_1108_L023", "quote": "然后今天十点的时候去超，去便利店买了一包十块的烟", "amount": 10},
+        {"date": "2026-11-11", "activity_id": "activity_20261111_hongtashan_001", "quote": "拿一包十块的红塔山", "amount": 10}
+      ],
+      "updated_at": "2026-11-12"
+    },
+    {
+      "canonical_brand": "紫云",
+      "aliases": ["紫云", "云烟（紫）", "云烟·紫", "云烟紫", "硬盒紫云", "紫云烟"],
+      "amount": 13,
+      "currency": "CNY",
+      "unit": "包",
+      "source_type": "user_confirmed",
+      "confirmed": true,
+      "label": "用户确认价 13 元（你确认过的价）",
+      "detail": "用户 2026-11-12 口头确认：紫云便利店价 13 元/包（另历史转写 2026-10-15 watch_000018_000002 亦曾说“老板，拿一包紫云十三那个”）",
+      "history_refs": [
+        {"date": "2026-11-12", "activity_id": "user_confirmation_20261112", "quote": "用户确认：紫云便利店价 13 元/包", "amount": 13},
+        {"date": "2026-10-15", "activity_id": "watch_000018_000002", "quote": "老板，拿一包紫云十三那个。", "amount": 13}
+      ],
+      "updated_at": "2026-11-12"
+    },
+    {
+      "canonical_brand": "贵烟（陈皮爆珠）",
+      "aliases": ["贵烟", "桂烟", "陈皮爆珠", "跨越"],
+      "amount": 23,
+      "currency": "CNY",
+      "unit": "包",
+      "source_type": "reference_unconfirmed",
+      "confirmed": false,
+      "label": "参考价，待你确认",
+      "detail": "用户未报过价格；离线手工录入零售参考价约 23 元/包（来源无变动日期，不可靠，需用户点击“对 / 改金额”确认后方入账）",
+      "reference_url": "https://www.cnxiangyan.com/brand/guiyan/",
+      "queried_at": "2026-11-12",
+      "review_actions": ["confirm_amount", "edit_amount"]
+    },
+    {
+      "canonical_brand": "乐途",
+      "aliases": ["乐途", "短支乐途", "黄金叶乐途"],
+      "amount": 15,
+      "currency": "CNY",
+      "unit": "包",
+      "source_type": "reference_unconfirmed",
+      "confirmed": false,
+      "label": "参考价，待你确认",
+      "detail": "用户未报过价格；离线手工录入零售参考价约 15 元/包（来源无变动日期，不可靠，需用户点击“对 / 改金额”确认后方入账）",
+      "reference_url": "https://www.cnxiangyan.com/brand/huangjinye/",
+      "queried_at": "2026-11-12",
+      "review_actions": ["confirm_amount", "edit_amount"]
+    }
+  ]
+}

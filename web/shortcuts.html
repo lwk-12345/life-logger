@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Life Logger 快捷指令一键安装</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "PingFang SC", sans-serif;
+            background-color: #f5f5f7;
+            color: #1d1d1f;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 28px 24px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+        p {
+            font-size: 13px;
+            color: #86868b;
+            margin: 0 0 24px 0;
+            line-height: 1.4;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px 0;
+            margin-bottom: 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.1s, opacity 0.2s;
+            box-sizing: border-box;
+        }
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.85;
+        }
+        .btn-pinch {
+            background: linear-gradient(135deg, #ffd60a, #ff9f0a);
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(255, 159, 10, 0.3);
+        }
+        .btn-capsule {
+            background: linear-gradient(135deg, #0a84ff, #0066cc);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(10, 132, 255, 0.3);
+        }
+        .tip {
+            font-size: 12px;
+            color: #a1a1a6;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>⌚ Life Logger 随身快捷指令</h1>
+        <p>轻点下方按钮，直接安装到手机与手表的【快捷指令】库，无需手动填写任何参数。</p>
+        
+        <a class="btn btn-pinch" href="/shortcuts/pinch.shortcut">⚡ 安装：捏捏快门</a>
+        <a class="btn btn-capsule" href="/shortcuts/capsule.shortcut">✊ 安装：会话胶囊</a>
+
+        <div class="tip">安装后支持：表盘大图标点击、辅助触控手势、轻点手机背面两下直接触发！</div>
+    </div>
+</body>
+</html>

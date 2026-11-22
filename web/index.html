@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Life Logger</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23002fa7'/%3E%3Cg fill='%23fff'%3E%3Crect x='4' y='9' width='3' height='6' rx='1.5'/%3E%3Crect x='9' y='5' width='3' height='14' rx='1.5'/%3E%3Crect x='14' y='8' width='3' height='8' rx='1.5'/%3E%3Crect x='19' y='10.5' width='2' height='3' rx='1'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/style.css?v=1793001500">
+  <!-- [2026-11-02 M5] 内联查看器「单一滚动源」：滚动只发生在页面文档（父页），
+       iframe 撑开到内容高度、自身不出滚动条。
+       根因：style.css 把 workspace 设为 position:fixed 且 iframe 为 flex:1 固定高，
+       同时 daily-timeline-live.html 在真 iframe 内把 html/body 设为 overflow-y:hidden
+       => 超出一屏的内容既不在 iframe 内可滚，也撑不开父页，被直接裁掉；
+       而父页的滚动条滚的是被盖住的 app-shell，滚了也没用（实测父页可滚 805px / 457px）。 -->
+  <style>
+    body.inline-viewer-open { overflow-y: auto !important; }
+    body.inline-viewer-open .app-shell { display: none !important; }
+    body.inline-viewer-open .inline-viewer-workspace {
+      position: static !important;
+      inset: auto !important;
+      z-index: auto !important;
+      /* [2026-11-02 M10] 原为 #fff：iframe 的 about:blank 也是白底，加载期就是一块纯白「白闪」。
+         改成页面画布色，在内容未就绪时表现为「一块同色画布 + 载入提示」，不是白闪。 */
+      background: #f7f8f6;
+    }
+    body.inline-viewer-open .inline-viewer-frame {
+      flex: 0 0 auto;
+      display: block;
+      width: 100%;
+      height: 800px;      /* JS 量完内容高度前的兜底值 */
+      min-height: 0;
+      /* [2026-11-02 M10] 内容未就绪（未触发 load）前不画：避免 about:blank 的白底先闪一下。
+         就绪后 .is-ready 渐显；prefers-reduced-motion 下不做过渡。 */
+      background: #f7f8f6;
+      opacity: 0;
+      transition: opacity .14s ease-out;
+    }
+    body.inline-viewer-open .inline-viewer-frame.is-ready { opacity: 1; }
+    @media (prefers-reduced-motion: reduce) {
+      body.inline-viewer-open .inline-viewer-frame { transition: none; }
+    }
+    .inline-viewer-loading { display: none; margin-top: 2px; color: #7a867f; font-size: 10.5px; font-weight: 700; }
+    body.inline-viewer-open .inline-viewer-workspace.is-loading .inline-viewer-loading { display: block; }
+  
+    /* [2026-11-04 用户标注 ①②③④ 极简首屏] */
+    /* ① 隐藏不知所云的「日报健康」14天圆点条 */
+    #daily-health-bar, .daily-health-bar { display: none !important; }
+    /* ③ 「今天」页已有顶部大输入框，隐藏右上角重复的「记一笔」按钮与多余标题栏空白 */
+    body[data-active-view="today"] #focus-capture-button { display: none !important; }
+    body[data-active-view="today"] .topbar { display: none !important; }
+    /* ④ 隐藏瀑布图上方重复的「180个活动·12条原始记录·金额与分类·待确认·打开当日日报·当天发生了什么」杂乱区 */
+    body[data-active-view="today"] #journal-card > .journal-title,
+    body[data-active-view="today"] .journal-day-header,
+    body[data-active-view="today"] .focus-summary,
+    body[data-active-view="today"] .day-expense-drilldown,
+    body[data-active-view="today"] .today-details,
+    body[data-active-view="today"] .timeline-section-head { display: none !important; }
+    body[data-active-view="today"] #journal-card { padding-top: 10px !important; }
+    /* ② 左下角合并后的版本状态条紧凑排布 */
+    #sidebar-service-status { padding: 6px 8px !important; background: transparent !important; border: none !important; }
+
+  </style>
+</head>
+<body data-active-view="today">
+  <a class="skip-link" href="#main-content">跳到主内容</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="3" y="9" width="3" height="6" rx="1.5"/><rect x="8.5" y="4" width="3" height="16" rx="1.5"/><rect x="14" y="7" width="3" height="10" rx="1.5"/><rect x="19" y="10.5" width="2.5" height="3" rx="1.25"/></svg></div>
+          <div><strong>Life Logger</strong></div>
+        </div>
+
+      <nav class="app-nav" aria-label="主要导航">
+        <div class="nav-group-label">核心生活记忆</div>
+        <button class="nav-item active" data-view="today" type="button" aria-current="page"><span class="nav-icon">◷</span><span>今天</span></button>
+        <button class="nav-item" data-view="kanban" type="button"><span class="nav-icon">▤</span><span>任务看板</span></button>
+        <button class="nav-item" data-view="stats" type="button"><span class="nav-icon">↺</span><span>回看</span></button>
+        <button class="nav-item" data-view="review" type="button"><span class="nav-icon">✓</span><span>需要我判断</span><span id="review-nav-count" class="nav-badge hidden">0</span></button>
+        <button class="nav-item" data-view="more" type="button"><span class="nav-icon">⋯</span><span>更多</span></button>
+      </nav>
+
+      <div id="sidebar-service-status" class="sidebar-foot" role="status" aria-live="polite" aria-atomic="true"><span id="sidebar-status-dot" class="status-dot checking" aria-hidden="true"></span><span id="sidebar-bind-status">正在连接本地服务…</span></div>
+    </aside>
+
+    <main id="main-content" class="workspace" tabindex="-1">
+      <header class="topbar">
+        <div>
+          <p id="page-kicker" class="page-kicker">DAILY MEMORY</p>
+          <h1 id="page-title">今天</h1>
+        </div>
+        <div class="topbar-actions">
+          <button id="focus-capture-button" class="new-import-button" type="button">记一笔</button>
+        </div>
+      </header>
+
+
+      <section class="view-panel active" data-panel="today">
+        <section id="natural-correction-card" class="surface natural-correction-surface spotlight-card">
+          <div class="section-title" style="display:none;">
+            <div>
+              <p class="section-kicker">QUICK SUPPLEMENT &amp; CORRECTION</p>
+              <h2 id="natural-correction-heading">口语补录与快速订正</h2>
+              <p id="natural-correction-hint" class="hint">支持口述或输入一句话直接补录消费、修改账目或添加待办（例如：“今天下午我还花了4.9元买了一瓶水”、“记一笔买咖啡15元”）。</p>
+            </div>
+          </div>
+          <form id="natural-correction-form" class="natural-correction-form">
+            <div class="correction-input-row spotlight-row">
+              <span class="spotlight-icon" aria-hidden="true">✦</span>
+              <input type="text" id="natural-correction-input" class="text-input correction-text-input spotlight-input" placeholder="随时随手记一笔、补录消费或待办（例如：“下午花了15块买咖啡”、“记一个待办明天开会”）…" autocomplete="off">
+              <button type="button" id="natural-correction-mic-btn" class="mic-toggle-btn spotlight-mic-btn" title="点击开始语音输入" aria-label="语音输入"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V7a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"/><path d="M19 11a7 7 0 0 1-14 0"/><path d="M12 18v4"/><path d="M8 22h8"/></svg></button>
+              <button type="submit" id="natural-correction-submit-btn" class="setting-action primary-action spotlight-btn">发送</button>
+            </div>
+            <div id="natural-correction-feedback" class="natural-correction-feedback hidden" role="status" aria-live="polite"></div>
+          </form>
+        </section>
+        <section id="journal-card" class="surface hero-surface">
+          <div class="section-title journal-title">
+            <div><p class="section-kicker">DAILY MEMORY</p><h2 id="journal-heading">每日记录</h2><p class="hint">按所选日期查看本人录音整理出的事件、待办、想法和生活数据。</p></div>
+            <div class="journal-title-actions"><span id="journal-freshness" class="journal-freshness checking" role="status" aria-live="polite" aria-atomic="true">等待首次更新</span></div>
+          </div>
+          <div id="journal-dashboard" class="journal-dashboard" role="region" aria-labelledby="journal-heading" aria-busy="true"><div class="journal-skeleton" aria-hidden="true"><span></span><span></span><span></span></div></div>
+          <span id="journal-load-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">正在整理历史记录</span>
+          <p id="journal-action-status" class="setting-status" aria-live="polite"></p>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="kanban">
+        <section class="surface kanban-surface">
+          <div class="kanban-toolbar">
+            <div>
+              <p class="section-kicker">TASK BOARD</p>
+              <p class="hint">录音待办按所选日期显示；OpenClaw 和微信任务不分日期（所有日期）。拖动、完成或删除都会保存，OpenClaw 任务会同步回去。</p>
+            </div>
+            <label class="kanban-date-control"><span>查看日期</span><input id="kanban-date-input" type="date" autocomplete="off" aria-label="选择任务看板日期"></label>
+          </div>
+          <div id="kanban-dashboard" class="kanban-dashboard" role="region" aria-label="今日抽取（本地事件）" aria-busy="true">正在读取任务看板……</div>
+          <section id="kanban-habits" class="kanban-habits" aria-label="习惯"></section>
+          <section id="openclaw-pool" class="openclaw-surface" role="region" aria-label="OpenClaw 真实任务池" aria-live="polite">正在读取 OpenClaw 任务池……</section>
+          <p id="kanban-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </section>
+      </section>
+
+      <!-- 全天生活仪表盘 (Daily Life Dashboard) -->
+      <section class="view-panel" data-panel="dashboard">
+        <div class="view-intro">
+          <p class="section-kicker">MULTI-MODAL DIGEST</p>
+          <h2>全天生活仪表盘</h2>
+          <p>融合声学场景分类、身心健康体征、社交倾听比例与随手记卡片的全天候生活综合报表。</p>
+        </div>
+
+        <div class="dashboard-toolbar surface">
+          <div class="dashboard-date-picker-wrap">
+            <label for="dashboard-date-input">选择日期：</label>
+            <input type="date" id="dashboard-date-input" class="text-input">
+            <button id="dashboard-refresh-btn" class="setting-action primary-action" type="button">加载报表</button>
+          </div>
+          <div id="dashboard-status-indicator" class="setting-badge">已就绪</div>
+        </div>
+
+        <!-- AI 亮点总结 -->
+        <section class="surface dashboard-card dashboard-ai-section">
+          <div class="section-title">
+            <div>
+              <p class="section-kicker">AI INSIGHTS</p>
+              <h3>今日生活亮点与反思</h3>
+            </div>
+          </div>
+          <div id="dashboard-ai-highlights" class="dashboard-ai-content">正在生成今日全景亮点……</div>
+        </section>
+
+        <!-- 生理体征卡片组 -->
+        <section class="surface dashboard-card dashboard-health-section">
+          <div class="section-title">
+            <div>
+              <p class="section-kicker">HEALTH &amp; BIOMETRICS</p>
+              <h3>身心健康与多模态生理指标</h3>
+            </div>
+          </div>
+          <div class="dashboard-health-grid">
+            <div class="health-card health-card-hr">
+              <div class="health-card-label">平均心率 / 极值</div>
+              <div id="dashboard-hr-stat" class="health-card-val">-- bpm</div>
+              <div id="dashboard-hr-sub" class="health-card-sub">极值: -- ~ -- bpm</div>
+            </div>
+            <div class="health-card health-card-steps">
+              <div class="health-card-label">步数与运动</div>
+              <div id="dashboard-steps-stat" class="health-card-val">-- 步</div>
+              <div id="dashboard-steps-sub" class="health-card-sub">Apple Watch 记录</div>
+            </div>
+            <div class="health-card health-card-sleep">
+              <div class="health-card-label">睡眠时长与深睡</div>
+              <div id="dashboard-sleep-stat" class="health-card-val">-- 小时</div>
+              <div id="dashboard-sleep-sub" class="health-card-sub">深睡: -- 分钟</div>
+            </div>
+            <div class="health-card health-card-stress">
+              <div class="health-card-label">生理压力波动</div>
+              <div id="dashboard-stress-stat" class="health-card-val">-- 次</div>
+              <div id="dashboard-stress-sub" class="health-card-sub">心率与语速高压对齐</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 声学场景分布与社交晴雨表 -->
+        <div class="dashboard-split-grid">
+          <!-- 声学场景 -->
+          <section class="surface dashboard-card">
+            <div class="section-title">
+              <div>
+                <p class="section-kicker">ACOUSTIC SCENE DETECTION</p>
+                <h3>声学环境场景分布</h3>
+              </div>
+            </div>
+            <div id="dashboard-scene-bars" class="dashboard-scene-list">
+              <!-- 动态条形图 -->
+            </div>
+          </section>
+
+          <!-- 社交发言比例 -->
+          <section class="surface dashboard-card">
+            <div class="section-title">
+              <div>
+                <p class="section-kicker">SOCIAL RATIO</p>
+                <h3>社交发言比例</h3>
+              </div>
+            </div>
+            <div class="dashboard-social-body">
+              <div class="dashboard-social-labels">
+                <span>本人发言 (<span id="dashboard-self-pct">--</span>%)</span>
+                <span>倾听他人 (<span id="dashboard-others-pct">--</span>%)</span>
+              </div>
+              <div class="dashboard-social-track">
+                <div id="dashboard-self-bar"></div>
+                <div id="dashboard-others-bar"></div>
+              </div>
+              <div id="dashboard-social-empty" class="dashboard-social-empty">今日暂无本人/他人发言时长数据，不显示比例。</div>
+
+              <div class="dashboard-social-footer">
+                <div>
+                  <span class="dashboard-laughter-label">今日笑声次数</span>
+                  <div id="dashboard-laughter-stat" class="dashboard-laughter-val">0 次</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 即刻抓取卡片流 (TODO / Expense / Idea) -->
+        <section class="surface dashboard-card dashboard-captures-section">
+          <div class="section-title">
+            <div>
+              <p class="section-kicker">INSTANT CAPTURES</p>
+              <h3>随手记即刻卡片流 (待办 / 记账 / 灵感)</h3>
+            </div>
+          </div>
+          <div id="dashboard-captures-list" class="dashboard-captures-grid">
+            <div class="dashboard-captures-loading">正在读取今日随口记录……</div>
+          </div>
+        </section>
+      </section>
+
+      <!-- 第二大脑生活记忆问答 (Personal Memory Q&A) -->
+      <section class="view-panel" data-panel="memory-qa">
+        <div class="view-intro">
+          <p class="section-kicker">SECOND BRAIN Q&amp;A</p>
+          <h2>生活记忆大脑问答</h2>
+          <p>基于你所有真实佩戴录音、事件、随手记开销与健康生理数据。随时向它询问任何过去的生活片段。</p>
+        </div>
+
+        <!-- 提问输入卡片 -->
+        <section class="surface memory-qa-surface">
+          <div class="memory-qa-prompts-wrap">
+            <span class="memory-qa-prompts-label">✦ 快捷提问推荐：</span>
+            <div id="memory-quick-prompts" class="memory-quick-prompts">
+              <button type="button" class="quick-chip chip-blue">我今天上午在干嘛？</button>
+              <button type="button" class="quick-chip chip-green">最近一次心率升高发生在什么时候？</button>
+              <button type="button" class="quick-chip chip-amber">我最近买东西花了多少钱？</button>
+              <button type="button" class="quick-chip chip-purple">有哪些记录下来的待办事项？</button>
+            </div>
+          </div>
+
+          <form id="memory-qa-form" class="memory-qa-form">
+            <input type="text" id="memory-qa-input" class="text-input memory-qa-input" placeholder="向你的第二大脑提问，例如：我前天下午和谁开的会？">
+            <button type="submit" id="memory-qa-submit-btn" class="setting-action primary-action memory-qa-submit">提问 AI</button>
+          </form>
+        </section>
+
+        <!-- 问答回答与证据展示区 -->
+        <section class="surface memory-qa-surface">
+          <div class="section-title">
+            <div>
+              <p class="section-kicker">AI ANSWER &amp; EVIDENCE</p>
+              <h3>问答结果与记忆依据</h3>
+            </div>
+          </div>
+          <div id="memory-qa-result-area" class="memory-qa-result-area">
+            <div class="memory-qa-placeholder">
+              输入问题或点击上方的快捷提示词，记忆大脑将为你检索日记、开销与生理数据作答。
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="patterns">
+        <div class="view-intro"><p class="section-kicker">PATTERN OBSERVATIONS</p><h2>规律观察</h2><p>基于多日结构化事件做可回溯观察；所有结论都附证据，不做诊断或预测。</p></div>
+        <div class="mobile-sub-nav mobile-insights-nav" role="tablist" aria-label="洞察切换">
+          <button type="button" class="mobile-sub-tab" data-open-view="stats">▦ 统计数据</button>
+          <button type="button" class="mobile-sub-tab active" data-open-view="patterns">⌁ 规律观察</button>
+        </div>
+        <section id="patterns-surface" class="surface patterns-surface" aria-busy="false">
+          <div class="stats-toolbar">
+            <div class="stats-presets" role="group" aria-label="规律观察范围">
+              <button class="setting-action" type="button" data-pattern-days="14">最近 14 天</button>
+              <button class="setting-action" type="button" data-pattern-days="30">最近 30 天</button>
+            </div>
+            <div class="stats-range-fields">
+              <label><span>从</span><input id="patterns-date-from" type="date" autocomplete="off"></label>
+              <label><span>到</span><input id="patterns-date-to" type="date" autocomplete="off"></label>
+              <button id="refresh-patterns" class="setting-action primary-action" type="button">查看规律</button>
+            </div>
+          </div>
+          <div id="patterns-sample-hint" class="pattern-sample-hint">建议至少积累 3 个有数据日期后再解读规律。</div>
+          <div id="patterns-status" class="search-summary" role="status" aria-live="polite" aria-atomic="true">请选择时间范围。</div>
+          <div id="pattern-alerts" class="pattern-alert-list"></div>
+          <div id="patterns-results" class="pattern-observation-list" aria-busy="false"><div class="search-empty" role="status"><strong>请选择时间范围</strong><span>读取后会在这里展示可回溯的规律观察。</span></div></div>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="stats">
+        <div class="view-intro"><p class="section-kicker">LIFE STATS</p><h2>周 / 月统计</h2><p>只基于已生成的结构化生活事件做汇总，不从原始音频猜测。</p></div>
+        <div class="mobile-sub-nav mobile-insights-nav" role="tablist" aria-label="洞察切换">
+          <button type="button" class="mobile-sub-tab active" data-open-view="stats">▦ 统计数据</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="patterns">⌁ 规律观察</button>
+        </div>
+        <section id="stats-surface" class="surface stats-surface" aria-busy="false">
+          <div class="stats-toolbar">
+            <div class="stats-presets" role="group" aria-label="统计范围">
+              <button class="setting-action" type="button" data-stats-days="7">最近 7 天</button>
+              <button class="setting-action" type="button" data-stats-days="30">最近 30 天</button>
+            </div>
+            <div class="stats-range-fields">
+              <label><span>从</span><input id="stats-date-from" type="date" autocomplete="off"></label>
+              <label><span>到</span><input id="stats-date-to" type="date" autocomplete="off"></label>
+              <button id="refresh-stats" class="setting-action primary-action" type="button">查看统计</button>
+            </div>
+          </div>
+          <div id="stats-status" class="search-summary" role="status" aria-live="polite" aria-atomic="true">请选择时间范围。</div>
+          <p id="stats-processing" class="status-copy hidden" role="status" aria-live="polite"></p>
+          <div id="stats-empty" class="stats-empty hidden" role="status" aria-live="polite" aria-atomic="true">当前时间范围还没有结构化事件。换一个日期范围后再试。</div>
+          <div class="stats-metrics">
+            <article><span>事件</span><strong id="stats-event-count">—</strong></article>
+            <article><span>当日消费（账本）</span><strong id="stats-expense-total">—</strong><small>当前查看日</small></article>
+            <article><span>运动次数</span><strong id="stats-exercise-count">—</strong></article>
+            <article><span>有数据天数</span><strong id="stats-days-count">—</strong></article>
+            <article class="stats-range-card"><span>区间消费（账本）</span><strong id="stats-expense-range">—</strong><small id="stats-expense-range-meta">—</small></article>
+          </div>
+          <div id="stats-expense-drilldown" class="stats-expense-drilldown"></div>
+          <div class="stats-grid">
+            <section><div class="stats-section-head"><strong>分类计数</strong><span>七类结构化事件</span></div><div id="stats-category-counts" class="stats-bars"></div></section>
+            <section><div class="stats-section-head"><strong>作息分布</strong><span>按事件发生小时</span></div><div id="stats-routine-distribution" class="stats-bars"></div></section>
+          </div>
+          <div class="stats-visual-row">
+            <section class="stats-chart-card">
+              <div class="stats-section-head">
+                <strong>每日消费趋势</strong>
+                <span id="stats-expense-summary-label">按天支出分布 (¥)</span>
+              </div>
+              <div id="stats-expense-chart" class="stats-trend-chart"></div>
+            </section>
+            <section class="stats-chart-card">
+              <div class="stats-section-head">
+                <strong>24 小时全天活动分布</strong>
+                <span>00:00 至 23:00 活跃时段热力</span>
+              </div>
+              <div id="stats-24h-chart" class="stats-hourly-chart"></div>
+            </section>
+          </div>
+          <section class="stats-ratio-card">
+            <div class="stats-section-head">
+              <strong>事件分类占比</strong>
+              <span>各类生活记录结构百分比</span>
+            </div>
+            <div id="stats-category-ratio-bar" class="stats-ratio-bar"></div>
+            <div id="stats-category-ratio-legend" class="stats-ratio-legend"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="search">
+        <div class="view-intro"><p class="section-kicker">MEMORY SEARCH</p><h2>搜索生活记录</h2><p>搜索本人说过的话和已经形成的生活事件。默认不会把直播、视频或其他人的声音混进结果。</p></div>
+        <section class="surface search-surface">
+          <form id="search-form" class="global-search-form" aria-describedby="search-summary" aria-busy="false">
+            <div class="search-quick-capsules" role="group" aria-label="快捷过滤">
+              <button class="search-capsule" type="button" data-capsule="today">今日</button>
+              <button class="search-capsule" type="button" data-capsule="this-week">本周</button>
+              <button class="search-capsule" type="button" data-capsule="expense">消费</button>
+              <button class="search-capsule" type="button" data-capsule="todo">待办</button>
+              <button class="search-capsule" type="button" data-capsule="self">本人发言</button>
+            </div>
+            <div class="search-input-wrap">
+              <span class="search-input-icon">⌕</span>
+              <input id="global-search-input" type="search" autocomplete="off" aria-label="搜索生活记录" placeholder="例如：买烟、清补凉、蓝牙耳机、Life Logger">
+              <button id="search-submit" class="search-submit" type="submit">搜索</button>
+            </div>
+            <div class="search-toolbar">
+              <div class="search-filters" role="group" aria-label="搜索类型">
+                <button class="search-filter active" type="button" data-search-type="all" aria-pressed="true">全部</button>
+                <button class="search-filter" type="button" data-search-type="utterance" aria-pressed="false">本人发言</button>
+                <button class="search-filter" type="button" data-search-type="event" aria-pressed="false">生活事件</button>
+              </div>
+              <div class="search-structured-filters">
+                <label class="search-category-field"><span>导入来源</span><select id="search-import-source">
+                  <option value="all">全部来源</option>
+                  <option value="apple-watch">Apple Watch</option>
+                  <option value="ai-passport-wifi">AI Passport</option>
+                  <option value="file-upload">文件导入</option>
+                </select></label>
+                <label class="search-category-field"><span>分类</span><select id="search-category">
+                  <option value="">全部分类</option>
+                  <option value="routine">作息</option>
+                  <option value="food">饮食</option>
+                  <option value="expense">消费</option>
+                  <option value="exercise">运动</option>
+                  <option value="work_communication">工作 / 沟通</option>
+                  <option value="idea">想法</option>
+                  <option value="todo">待办</option>
+                </select></label>
+                <label class="search-date-field"><span>从</span><input id="search-date-from" type="date" autocomplete="off"></label>
+                <label class="search-date-field"><span>到</span><input id="search-date-to" type="date" autocomplete="off"></label>
+                <label class="search-amount-field"><span>最低 ¥</span><input id="search-amount-min" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0" autocomplete="off"></label>
+                <label class="search-amount-field"><span>最高 ¥</span><input id="search-amount-max" type="number" min="0" step="0.01" inputmode="decimal" placeholder="不限" autocomplete="off"></label>
+              </div>
+            </div>
+          </form>
+          <div id="search-summary" class="search-summary" role="status" aria-live="polite" aria-atomic="true">输入关键词后开始搜索。</div>
+          <div id="search-results" class="search-results" aria-busy="false">
+            <div class="search-empty" role="status"><strong>从你的生活记录里找东西</strong><span>结果会保留时间、来源录音和证据入口，方便回到原文核对。</span></div>
+          </div>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="import">
+        <div class="view-intro"><p class="section-kicker">INGEST</p><h2>导入录音</h2><p>选择一份或一批录音。原始文件会保留，处理链路会生成转写、声源归属和生活事件。</p></div>
+        <div class="mobile-sub-nav mobile-hub-nav" role="tablist" aria-label="中枢切换">
+          <button type="button" class="mobile-sub-tab" data-open-view="review">✓ 需要我判断<span class="mobile-review-badge nav-badge hidden">0</span></button>
+          <button type="button" class="mobile-sub-tab active" data-open-view="import">＋ 导入处理</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="history">≡ 任务历史</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="settings">⚙ 设置</button>
+        </div>
+
+        <section class="surface auto-ingest-surface" aria-labelledby="watch-reception-title">
+          <div class="section-title"><div><p class="section-kicker">APPLE WATCH · LOCAL FIRST</p><h2 id="watch-reception-title">手表录音处理</h2><p class="hint">每个已收到的录音分段会直接进入正式ASR，进度与识别句子会逐段更新；整场结束并收齐后，再对完整录音进行CAM++声源归属和后续提取。</p></div></div>
+          <p id="watch-reception-status" class="status-copy checking" role="status" aria-live="polite" aria-atomic="true">正在读取接收记录…</p>
+          <div id="watch-device-statuses" class="watch-device-statuses" aria-live="polite"></div>
+          <div id="watch-reception-sessions" class="auto-ingest-history" aria-busy="true"></div>
+        </section>
+
+        <section id="manual-import-surface" class="surface import-surface" aria-busy="false">
+          <div class="import-live-head"><span>本地文件导入</span><span id="import-live-status" class="setting-badge" role="status" aria-live="polite" aria-atomic="true">等待选择</span></div>
+          <div id="manual-drop-hero" class="drop-hero">
+            <div class="drop-copy"><div class="drop-icon">↑</div><div><strong>把录音交给 Life Logger</strong><span id="import-file-hint">支持文件或整个文件夹，音频按原始名称和哈希统一归档。</span></div></div>
+            <div class="picker-row">
+              <label class="file-picker"><span>选择录音文件</span><input id="file-input" type="file" multiple accept="audio/*,.wav,.m4a,.mp3,.flac,.aac,.ogg,.opus,.mp4,.mov,.webm" aria-describedby="import-file-hint"></label>
+              <label class="file-picker secondary"><span>选择录音文件夹</span><input id="folder-input" type="file" multiple webkitdirectory directory accept="audio/*,.wav,.m4a,.mp3,.flac,.aac,.ogg,.opus,.mp4,.mov,.webm" aria-describedby="import-file-hint"></label>
+            </div>
+          </div>
+
+          <div class="import-grid">
+          <div id="mobile-capture-card" class="mobile-capture-card" aria-busy="false">
+            <div><span class="section-kicker">MOBILE CAPTURE</span><strong>手机本地捕获</strong><p id="mobile-capture-hint">录一段或选择手机里的音频。文件只会上传到当前 Life Logger 本机/受信私网服务，并复用现有处理链。</p></div>
+            <label class="file-picker mobile-capture-picker"><span>录音 / 选择音频</span><input id="mobile-capture-input" type="file" accept="audio/*,.wav,.m4a,.mp3,.flac,.aac,.ogg,.opus,.mp4,.mov,.webm" capture="microphone" aria-describedby="mobile-capture-hint"></label>
+            <p id="mobile-capture-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          </div>
+
+            <label class="time-field"><span>开始时间</span><input id="start-at" type="datetime-local" autocomplete="off"><small>可留空。系统会优先从文件名、元数据或文件时间推断。</small></label>
+            <div class="pipeline-preview"><span>当前处理链</span><strong id="import-pipeline-models">本地 ASR（MOSS / Whisper）→ CAM++ → 本地事件提取</strong><small>决策增强已停用</small></div>
+          </div>
+
+          <div id="selected-files" class="selected-files empty" aria-describedby="selected-files-status">还没有选择文件</div>
+          <span id="selected-files-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">还没有选择文件</span>
+          <button id="start-button" class="primary" type="button" aria-busy="false" aria-describedby="upload-status" disabled>创建任务并开始处理</button>
+          <p id="upload-status" class="status-copy" role="status" aria-live="polite" aria-atomic="true"></p>
+        </section>
+
+        <section id="passport-stream-surface" class="surface auto-ingest-surface passport-stream-surface" aria-busy="true">
+          <div class="section-title auto-ingest-head">
+            <div><p class="section-kicker">AI PASSPORT · LAN</p><h2>同网录音会话</h2><p class="hint">Life Logger Web 会自动启动 AI Passport 接收器：TCP <code>:8766</code> 收音频、UDP <code>:8767</code> 做同网发现。只有 CRC32 全通过且无缺片的会话才会组装 WAV 并进入现有处理链。</p></div>
+            <span id="passport-stream-badge" class="setting-badge" role="status" aria-live="polite">等待接收</span>
+          </div>
+          <div class="mobile-token-card">
+            <div><span>自动发现 / 手动回退</span><code id="passport-receiver-summary" aria-live="polite">正在读取 receiver 状态…</code><small>正常情况下 endpoint 留空即可自动发现；只有广播被路由器/防火墙拦截时，才手动填 <code>http://&lt;本机局域网IP&gt;:8766/v1/audio/chunk</code>。不要填 127.0.0.1。</small></div>
+            <div id="passport-receiver-health" class="passport-receiver-health" role="group" aria-label="AI Passport companion receiver 健康状态"><span id="passport-http-health" class="receiver-health-chip checking">TCP 8766 · 检查中</span><span id="passport-discovery-health" class="receiver-health-chip checking">UDP 8767 · 检查中</span><span id="passport-import-health" class="receiver-health-chip checking">完整会话 · 检查中</span></div>
+          </div>
+          <div id="passport-stream-sessions" class="auto-ingest-history" aria-busy="false"><div class="journal-empty" role="status"><strong>还没有 AI Passport 录音会话</strong><span>Companion 就绪后，录音会话会自动出现在这里。</span></div></div>
+          <p id="passport-stream-status" class="status-copy" aria-live="polite">正在读取 AI Passport 自动接收状态。</p>
+        </section>
+
+        <section id="auto-ingest-surface" class="surface auto-ingest-surface" aria-busy="true">
+          <div class="section-title auto-ingest-head">
+            <div><p class="section-kicker">AUTO INGEST</p><h2>自动导入文件夹</h2><p class="hint">监控本机目录里的新录音。文件大小和修改时间稳定后才会进入现有处理链，内容哈希相同的文件不会重复处理。</p></div>
+            <span id="auto-ingest-badge" class="setting-badge" role="status" aria-live="polite">读取中</span>
+          </div>
+          <div class="auto-ingest-config">
+            <label class="auto-ingest-toggle"><span><strong>后台自动处理</strong><small>只扫描你明确填写的本机目录；若启用了云端事件提取，所需转写文本会发送给对应服务。</small></span><span class="switch"><input id="auto-ingest-enabled" type="checkbox"><span class="switch-track"><span></span></span></span></label>
+            <div class="auto-ingest-folders"><div class="auto-ingest-folder-head"><span>监控目录</span><button id="choose-auto-ingest-folder" class="setting-action" type="button" aria-describedby="auto-ingest-status">从 Finder 选择</button></div><textarea id="auto-ingest-folders" rows="3" placeholder="/Volumes/H8精英版/RECORD&#10;/Users/你的用户名/Recordings&#10;每行一个绝对路径" aria-label="监控目录（每行一个绝对路径）" aria-describedby="auto-ingest-folders-hint"></textarea><small id="auto-ingest-folders-hint">H8 推荐目录：<code>/Volumes/H8精英版/RECORD</code>。设备未连接时会显示“目录异常”，重新挂载到同一路径后自动恢复。支持递归扫描 WAV、M4A、MP3、FLAC、AAC、OGG、OPUS、MP4、MOV、WEBM。</small></div>
+            <div class="auto-ingest-options">
+              <label><span>文件稳定等待</span><div><input id="auto-ingest-stability" type="number" min="5" max="3600" step="5" value="20" autocomplete="off"><small>秒</small></div></label>
+              <label><span>扫描间隔</span><div><input id="auto-ingest-interval" type="number" min="5" max="3600" step="5" value="15" autocomplete="off"><small>秒</small></div></label>
+            </div>
+          </div>
+          <div class="auto-ingest-summary">
+            <div><span>等待稳定</span><strong id="auto-ingest-pending">0</strong></div>
+            <div><span>已去重归档</span><strong id="auto-ingest-processed">0</strong></div>
+            <div><span>最近导入</span><strong id="auto-ingest-last-count">0</strong></div>
+            <div><span>最近任务</span><strong id="auto-ingest-last-job">—</strong></div>
+            <div><span>扫描状态</span><strong id="auto-ingest-scan-state">空闲</strong></div>
+          </div>
+          <div class="auto-ingest-actions">
+            <button id="enable-auto-ingest" class="setting-action primary-action" type="button" aria-describedby="auto-ingest-status">一键启用</button>
+            <button id="save-auto-ingest" class="setting-action" type="button" aria-describedby="auto-ingest-status">保存设置</button>
+            <button id="scan-auto-ingest" class="setting-action" type="button" aria-describedby="auto-ingest-status">立即扫描一次</button>
+            <span id="auto-ingest-status" class="status-copy" role="status" aria-live="polite" aria-atomic="true">正在读取自动导入状态……</span>
+          </div>
+          <div class="auto-ingest-history-block">
+            <div class="auto-ingest-history-head"><strong>最近活动</strong><span>只记录配置变化、实际导入和错误，不记录每次空扫描。</span></div>
+            <div id="auto-ingest-history" class="auto-ingest-history"><div class="journal-empty" role="status"><strong>还没有自动导入活动</strong><span>启用监控目录后，实际导入、配置变化和错误会出现在这里。</span></div></div>
+          </div>
+        </section>
+
+        <section id="current-card" class="surface current-surface hidden" aria-busy="false" aria-describedby="current-job-load-status">
+          <div class="section-title"><div><p class="section-kicker">PROCESSING</p><h2 id="current-job-heading">当前任务</h2></div><div class="current-title-actions"><span id="current-job-live-status" class="current-live-status checking" role="status" aria-live="polite" aria-atomic="true">等待任务状态</span><button id="refresh-button" class="quiet-button" type="button" aria-describedby="current-job-load-status current-job-live-status">刷新</button></div></div>
+          <div id="current-job" role="region" aria-labelledby="current-job-heading"></div>
+          <span id="current-job-load-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></span>
+        </section>
+      </section>
+
+      <section class="view-panel" data-panel="review">
+        <div class="mobile-sub-nav mobile-hub-nav" role="tablist" aria-label="中枢切换">
+          <button type="button" class="mobile-sub-tab active" data-open-view="review">✓ 需要我判断<span class="mobile-review-badge nav-badge hidden">0</span></button>
+          <button type="button" class="mobile-sub-tab" data-open-view="import">＋ 导入处理</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="history">≡ 任务历史</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="settings">⚙ 设置</button>
+        </div>
+        <section class="surface"><div id="judgment-panel" class="judgment-panel" aria-live="polite"></div><div id="review-dashboard" class="review-dashboard" role="region" aria-label="需要我判断" aria-busy="true">正在读取需要我判断的内容……</div><p id="review-action-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></p></section>
+      </section>
+
+      <section class="view-panel" data-panel="history">
+        <div class="view-intro"><p class="section-kicker">RUN HISTORY</p><h2>任务历史</h2><p>查看每次导入、处理耗时和结果。技术文件保留，但不再占据主界面。</p></div>
+        <div class="mobile-sub-nav mobile-hub-nav" role="tablist" aria-label="中枢切换">
+          <button type="button" class="mobile-sub-tab" data-open-view="review">✓ 需要我判断<span class="mobile-review-badge nav-badge hidden">0</span></button>
+          <button type="button" class="mobile-sub-tab" data-open-view="import">＋ 导入处理</button>
+          <button type="button" class="mobile-sub-tab active" data-open-view="history">≡ 任务历史</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="settings">⚙ 设置</button>
+        </div>
+        <section class="surface"><div class="section-title"><h2 id="jobs-heading">全部任务</h2><div class="journal-title-actions"><span id="jobs-live-status" class="setting-badge" role="status" aria-live="polite" aria-atomic="true">读取中</span><button id="jobs-refresh" class="quiet-button" type="button" aria-describedby="jobs-load-status jobs-live-status">刷新</button></div></div><div id="jobs-list" class="jobs-list" role="list" aria-labelledby="jobs-heading" aria-describedby="jobs-load-status jobs-live-status" aria-busy="true">正在读取……</div><span id="jobs-load-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">正在读取任务历史</span></section>
+      </section>
+
+      <section class="view-panel" data-panel="more">
+        <div class="view-intro">
+          <p class="section-kicker">MORE</p>
+          <h2 class="visually-duplicate">更多</h2>
+          <p>低频功能、数据工具和系统状态都收在这里，不再抢占今天。</p>
+        </div>
+        <section class="surface more-surface">
+          <div class="more-grid">
+            <button type="button" class="more-card" data-open-view="kanban"><strong>任务看板</strong><span>待办、灵感与语音查询分栏查看</span></button>
+            <button type="button" class="more-card" data-open-view="search"><strong>搜索</strong><span>找一句话、一笔消费或一个日期</span></button>
+            <button type="button" class="more-card" data-open-view="dashboard"><strong>全天仪表盘</strong><span>场景、健康与社交比例</span></button>
+            <button type="button" class="more-card" data-open-view="patterns"><strong>规律观察</strong><span>多日数据里的变化</span></button>
+            <button type="button" class="more-card" data-open-view="import"><strong>录音导入</strong><span>手动导入与处理进度</span></button>
+            <button type="button" class="more-card" data-open-view="history"><strong>任务历史</strong><span>每次处理的状态与产物</span></button>
+            <button type="button" class="more-card" data-open-view="memory-qa"><strong>记忆大脑</strong><span>用问题回看已经记住的事</span></button>
+            <button type="button" class="more-card" data-open-view="settings"><strong>系统设置</strong><span>模型、接入与自检</span></button>
+            <a class="more-card" href="/comparison.html"><strong>模型对照</strong><span>两路模型结果对比</span></a>
+          </div>
+        </section>
+        <details class="system-status-drawer">
+          <summary class="system-status-toggle">⚙ 底层服务监控与硬件状态（点击展开）</summary>
+          <section id="system-status-panel" class="system-status-panel" aria-labelledby="system-status-heading">
+            <div class="system-status-head"><strong id="system-status-heading">Life Logger 状态</strong><span id="system-status-overall" class="system-status-overall checking" role="status" aria-live="polite" aria-atomic="true">正在检查…</span></div>
+            <div class="system-status-items">
+              <span><b>本地服务</b><em id="system-status-web">检查中</em></span>
+              <span><b>Apple Watch</b><em id="system-status-watch">读取中</em></span>
+              <span><b>Mac 任务 / ASR</b><em id="system-status-jobs">读取中</em></span>
+            </div>
+            <div class="system-status-foot"><small id="system-status-checked">尚未检查</small><button type="button" class="system-status-link" data-open-view="import">查看转写记录 →</button></div>
+          </section>
+        </details>
+        <div id="service-version-warning" class="service-version-warning hidden" role="status"></div>
+      </section>
+
+      <section class="view-panel" data-panel="settings">
+        <div class="view-intro"><p class="section-kicker">PREFERENCES</p><h2>设置</h2><p>配置本地处理模型、Jev 增强，以及把 Life Logger 接入你自己的 Agent。</p></div>
+        <div class="mobile-sub-nav mobile-hub-nav" role="tablist" aria-label="中枢切换">
+          <button type="button" class="mobile-sub-tab" data-open-view="review">✓ 需要我判断<span class="mobile-review-badge nav-badge hidden">0</span></button>
+          <button type="button" class="mobile-sub-tab" data-open-view="import">＋ 导入处理</button>
+          <button type="button" class="mobile-sub-tab" data-open-view="history">≡ 任务历史</button>
+          <button type="button" class="mobile-sub-tab active" data-open-view="settings">⚙ 设置</button>
+        </div>
+
+        <div class="settings-tabs" role="tablist" aria-label="设置页面">
+          <button id="settings-tab-models" class="settings-tab active" data-settings-page-target="models" type="button" role="tab" aria-selected="true" aria-controls="settings-panel-models" tabindex="0">模型与处理</button>
+          <button id="settings-tab-agent" class="settings-tab" data-settings-page-target="agent" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-agent" tabindex="-1">接入 Agent</button>
+          <button id="settings-tab-mobile" class="settings-tab" data-settings-page-target="mobile" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-mobile" tabindex="-1">移动访问</button>
+          <button id="settings-tab-doctor" class="settings-tab" data-settings-page-target="doctor" type="button" role="tab" aria-selected="false" aria-controls="settings-panel-doctor" tabindex="-1">系统自检</button>
+        </div>
+
+        <div id="settings-panel-models" class="settings-page active" data-settings-page="models" role="tabpanel" aria-labelledby="settings-tab-models">
+
+        <section id="model-settings-surface" class="surface model-settings-surface" aria-busy="true" aria-describedby="model-settings-load-status model-save-status">
+          <div class="section-title model-settings-head">
+            <div>
+              <p class="section-kicker">MODEL SETUP</p>
+              <h2>模型方案</h2>
+              <p class="hint">普通用户可以直接使用推荐方案；高级用户再按处理阶段选择模型。</p>
+            </div>
+            <button id="open-onboarding" class="quiet-button" type="button">重新运行首次设置</button>
+          </div>
+          <div class="recommended-model-banner">
+            <div><span class="recommend-badge">推荐</span><strong>平衡 · 按本机能力选择</strong><p>使用本机已安装并标记推荐的 ASR（MOSS 或 Whisper）+ CAM++ + 本地事件提取；不会强开云端决策增强。</p></div>
+            <button id="apply-recommended-models" class="setting-action primary-action" type="button">使用推荐方案</button>
+          </div>
+          <div class="model-stage">
+            <div class="model-stage-heading"><div><span>01</span><strong>语音转写</strong></div><small>把录音变成带时间的文字</small></div>
+            <div id="asr-model-options" class="model-option-grid"></div>
+          </div>
+          <div class="model-stage">
+            <div class="model-stage-heading"><div><span>02</span><strong>声源归属</strong></div><small>判断是不是本人在说话</small></div>
+            <div id="speaker-model-options" class="model-option-grid"></div>
+          </div>
+          <div class="model-stage">
+            <div class="model-stage-heading"><div><span>03</span><strong>事件判断</strong></div><small>从本人发言里提取真实生活事件</small></div>
+            <div class="event-model-summary"><span>本地规则始终作为基础层</span><strong id="event-model-current">Jev：关闭</strong></div>
+          </div>
+          <span id="model-settings-load-status" class="sr-only" role="status" aria-live="polite" aria-atomic="true">正在读取本机模型配置</span>
+          <div class="model-settings-footer">
+            <span id="model-save-status" role="status" aria-live="polite" aria-atomic="true">当前设置会用于之后新建的处理任务。</span>
+            <button id="save-model-preferences" class="setting-action primary-action" type="button">保存模型设置</button>
+          </div>
+        </section>
+
+        <section class="surface settings-surface">
+          <div class="setting-row setting-row-main">
+            <div><div class="setting-title-line"><h3>DeepSeek 事件提取</h3><span id="deepseek-key-state" class="setting-badge">检测中</span></div><p>DeepSeek V4.1 Flash 会结合上下文分批提取消费等事件。启用后，所选转写文本会发送到 DeepSeek 云端处理；只影响之后新建的处理任务，已完成的旧任务不会自动重跑。处理失败的片段会保留为待确认，不会静默丢弃。</p></div>
+            <label class="switch"><input id="deepseek-enabled" type="checkbox" aria-label="启用 DeepSeek 事件提取"><span class="switch-track"><span></span></span></label>
+          </div>
+          <div class="deepseek-settings-panel">
+            <div class="deepseek-model-line"><span>模型</span><strong>DeepSeek V4.1 Flash</strong><code>deepseek-flash</code></div>
+            <div class="secret-input-row deepseek-input-row">
+              <input id="deepseek-api-key" type="password" autocomplete="off" placeholder="粘贴 DeepSeek API Key" aria-label="DeepSeek API Key" aria-describedby="deepseek-key-hint">
+              <button id="save-deepseek-settings" class="setting-action primary-action" type="button">保存设置</button>
+            </div>
+            <small id="deepseek-key-hint">API Key 保存在本机私密配置中，不会写入浏览器 localStorage。留空保存时会保留已保存的 Key。</small>
+            <p id="deepseek-action-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></p>
+          </div>
+        </section>
+
+        
+        <section class="surface settings-surface">
+          <div class="setting-row"><div><h3>决策增强 · 已停用</h3><p>新录音直接进入事件提取。<a href="/comparison.html">查看历史模型对照</a>，历史结果仅供读取。</p></div></div>
+          <div class="setting-row compact-setting"><div><h3>隐私原则</h3><p>录音、ASR 和声源归属在本机处理。启用 DeepSeek 后，所需转写文本会发送到配置的提取服务。</p></div></div>
+        </section>
+
+        </div>
+
+        <div id="settings-panel-agent" class="settings-page" data-settings-page="agent" role="tabpanel" aria-labelledby="settings-tab-agent" hidden>
+          <section id="agent-connect-surface" class="surface agent-connect-surface" aria-busy="false">
+            <div class="section-title agent-connect-head">
+              <div>
+                <p class="section-kicker">AGENT CONNECT</p>
+                <h2>接入你的 Agent</h2>
+                <p class="hint">把下面这段说明复制给 Codex、OpenClaw、Claude Code 或其他能访问本机 HTTP 服务的 Agent。无需让 Agent 读取项目源码。</p>
+              </div>
+              <span id="agent-connect-badge" class="setting-badge" role="status" aria-live="polite">待自检</span>
+            </div>
+
+            <div class="agent-endpoint-card">
+              <div>
+                <span>Life Logger 本地地址</span>
+                <code id="agent-base-url">http://127.0.0.1:8765</code>
+              </div>
+              <div class="agent-endpoint-actions">
+                <button id="copy-agent-url" class="setting-action" type="button" aria-describedby="agent-connect-status">复制地址</button>
+                <button id="test-agent-connection" class="setting-action" type="button" aria-describedby="agent-connect-status">连接自检</button>
+              </div>
+            </div>
+
+            <div class="agent-prompt-block">
+              <div class="agent-prompt-head">
+                <div><strong>复制这段话给你的 Agent</strong><span>包含可用接口、默认只读边界和使用方式。</span></div>
+                <button id="copy-agent-prompt" class="setting-action primary-action" type="button" aria-describedby="agent-connect-status">复制给 Agent</button>
+              </div>
+              <textarea id="agent-connect-prompt" class="agent-connect-prompt" readonly aria-label="Agent 接入说明"></textarea>
+              <p id="agent-connect-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true">尚未复制。建议先点“连接自检”，确认本地服务可访问。</p>
+            </div>
+
+            <div class="agent-capability-grid">
+              <article><span>01</span><strong>一个消费 API</strong><p>小苏/微信日常只读 <code>/api/daily-brief</code>，不依赖任务目录或内部搜索接口。</p></article>
+              <article><span>02</span><strong>一个本地 outbox</strong><p>同一份 <code>agent-brief-v1</code> 落到 <code>output/local-web/outbox/daily-brief/</code>，供本地桥监听。</p></article>
+              <article><span>03</span><strong>隐私 allowlist</strong><p>只出站摘要、待办/警告和 ≥0.90 高置信点；原始音频、全文转写、evidence 不出站。</p></article>
+              <article><span>04</span><strong>默认只读</strong><p>Bearer token 继续复用移动访问；provider/微信格式化逻辑留在 Life Logger 外部。</p></article>
+            </div>
+
+            <div class="agent-api-note">
+              <strong>稳定消费边界</strong>
+              <p>数据面只承诺 <code>GET /api/daily-brief?date=YYYY-MM-DD</code>；<code>/api/settings</code> 用于能力检查，<code>/api/doctor</code> 用于排障。其他 API 仍可开发调试，但不是小苏/微信稳定契约。</p>
+            </div>
+
+            <div class="data-backup-card">
+            <div class="agent-api-note">
+              <strong>外部 Agent 示例</strong>
+              <pre id="agent-query-examples">所有请求头: Authorization: Bearer &lt;TOKEN&gt;
+稳定消费 API: GET /api/daily-brief?date=2026-09-21
+连通/能力检查: GET /api/settings
+排障: GET /api/doctor</pre>
+              <p>如果接口无法连接，先检查 <code>/api/doctor</code>；如果网页已经更新但缺少新接口，重启本地服务。</p>
+            </div>
+
+              <div><strong>本地状态备份</strong><p id="data-backup-status" role="status" aria-live="polite" aria-atomic="true">正在检查备份接口……</p></div>
+              <a id="data-backup-download" class="setting-action" download aria-disabled="true" aria-describedby="data-backup-status" tabindex="-1">检测中……</a>
+            </div>
+
+            <div id="data-health-card" class="data-health-card" aria-busy="false">
+              <div class="data-health-head"><div><strong>数据健康</strong><p id="data-health-status" role="status" aria-live="polite" aria-atomic="true">尚未检测。</p></div><span id="data-health-badge" class="setting-badge" role="status" aria-live="polite">待检测</span></div>
+              <div class="data-health-metrics">
+                <div><span>检查文件</span><strong id="data-health-files">—</strong></div>
+                <div><span>发现问题</span><strong id="data-health-issues">—</strong></div>
+                <div><span>自动导入</span><strong id="data-health-auto-ingest">—</strong></div>
+              </div>
+              <div class="data-health-actions">
+                <button id="refresh-data-health" class="setting-action" type="button" aria-describedby="data-health-status">重新检测</button>
+                <a id="download-data-health" class="setting-action" href="/api/data-health?download=1" download aria-describedby="data-health-status">下载诊断报告</a>
+              </div>
+            </div>
+          </section>
+        </div>
+        <div id="settings-panel-mobile" class="settings-page" data-settings-page="mobile" role="tabpanel" aria-labelledby="settings-tab-mobile" hidden>
+          <section id="mobile-access-surface" class="surface mobile-access-surface" aria-busy="false">
+            <div class="section-title mobile-access-head">
+              <div>
+                <p class="section-kicker">MOBILE ACCESS</p>
+                <h2>手机局域网访问</h2>
+                <p class="hint">默认仅监听本机。只有显式开启后，重启服务才会监听局域网；不提供公网暴露。</p>
+              </div>
+              <span id="mobile-access-badge" class="setting-badge">仅本机</span>
+            </div>
+            <div class="setting-row setting-row-main">
+              <div><div class="setting-title-line"><h3>局域网访问</h3><span id="mobile-bind-host" class="setting-badge">127.0.0.1</span></div><p>开启后服务下次启动将绑定 <code>0.0.0.0</code>，同一可信局域网内的手机可访问。公司、咖啡馆等公共 Wi‑Fi 不要开启。</p></div>
+              <label class="switch"><input id="lan-access-enabled" type="checkbox" aria-label="启用局域网访问"><span class="switch-track"><span></span></span></label>
+            </div>
+            <label class="mobile-trusted-bind"><span>受信私网绑定（可选）</span><input id="trusted-network-bind" type="text" inputmode="decimal" autocomplete="off" placeholder="例如 Tailscale 100.64.x.x"><small>留空时开启局域网访问会监听 <code>0.0.0.0</code>。填写后仅绑定该 RFC1918 / Tailscale IPv4，适合 Tailscale / WireGuard；公网 IP 会被拒绝。</small></label>
+            <p id="watch-direct-status" class="hint" role="status" aria-live="polite">Apple Watch 自动连接状态正在读取……</p>
+            <div id="mobile-capture-settings" class="mobile-capture-settings" aria-busy="false">
+              <div><strong>手机捕获入口</strong><p>使用浏览器/壳的录音或文件选择能力，继续走现有本地 job upload；不会写入 daily brief outbox/webhook，也不会发往公网。</p></div>
+              <label class="auto-ingest-toggle"><span><strong>显示捕获入口</strong><small>默认开启，仅在你已访问 Life Logger Web 时可用。</small></span><span class="switch"><input id="mobile-capture-enabled" type="checkbox"><span class="switch-track"><span></span></span></span></label>
+              <label class="auto-ingest-toggle"><span><strong>选完后自动开始处理</strong><small>默认关闭；关闭时先进入待处理列表，由你再次确认。</small></span><span class="switch"><input id="mobile-capture-auto-start" type="checkbox"><span class="switch-track"><span></span></span></span></label>
+              <button id="save-mobile-capture" class="setting-action" type="button" aria-describedby="mobile-capture-settings-status">保存捕获设置</button>
+              <span id="mobile-capture-settings-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></span>
+            </div>
+            <div class="mobile-token-card">
+              <div><span>访问令牌</span><code id="mobile-access-token">读取中……</code><small>令牌保存在本机 secrets.json，设置页默认只显示掩码；点“复制令牌/复制地址”时才读取完整值。普通 API 仍需令牌。</small></div>
+              <button id="copy-mobile-token" class="setting-action" type="button">复制令牌</button>
+            </div>
+            <div class="mobile-token-card">
+              <div><span>手机配对地址</span><code id="mobile-pair-url">http://&lt;电脑局域网IP&gt;:8765/?token=...</code><small>在同一可信 Wi‑Fi 下打开一次即可建立本地会话；地址栏中的 token 会自动清除。</small></div>
+              <button id="copy-mobile-pair-url" class="setting-action" type="button">复制地址</button>
+            </div>
+            <div class="mobile-access-actions">
+              <button id="save-mobile-access" class="setting-action primary-action" type="button" aria-describedby="mobile-access-status">保存访问设置</button>
+              <span id="mobile-access-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true">修改绑定范围后需要重启本地服务才能生效。</span>
+            </div>
+            <div class="mobile-security-note"><strong>安全边界</strong><p>Apple Watch 自动直连只开放 Watch 录音接口，其他 Life Logger API 仍需令牌；同一受信网络上的设备仍可能伪造 Watch 上传。不要在公共 Wi‑Fi 开启、不要做路由器端口映射或把 8765 暴露到公网。</p></div>
+          </section>
+        </div>
+
+        <div id="settings-panel-doctor" class="settings-page" data-settings-page="doctor" role="tabpanel" aria-labelledby="settings-tab-doctor" hidden>
+          <section id="doctor-surface" class="surface doctor-surface" aria-busy="false">
+            <div class="section-title doctor-head">
+              <div>
+                <p class="section-kicker">SYSTEM DOCTOR</p>
+                <h2>系统自检</h2>
+                <p class="hint">检查本地模型路径、Worker Python、ffmpeg/ffprobe、服务健康和最近任务状态。</p>
+              </div>
+              <span id="doctor-badge" class="setting-badge" role="status" aria-live="polite">待检测</span>
+            </div>
+            <div class="doctor-actions">
+              <button id="run-doctor" class="setting-action primary-action" type="button" aria-describedby="doctor-summary">立即自检</button>
+              <span id="doctor-summary" class="setting-status" role="status" aria-live="polite" aria-atomic="true">尚未运行。</span>
+            </div>
+            <div id="doctor-checks" class="doctor-checks" role="list" aria-label="系统自检结果"></div>
+            <div class="doctor-jobs-block">
+              <strong>最近任务</strong>
+              <div id="doctor-jobs" class="doctor-jobs" role="list" aria-label="最近任务状态"><div class="journal-empty" role="status"><strong>尚未读取</strong><span>运行系统自检后显示最近任务。</span></div></div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <nav id="mobile-bottom-nav" class="mobile-bottom-nav" aria-label="移动端底栏导航">
+      <button class="mobile-nav-btn active" data-mobile-view="today" type="button" aria-label="今天">
+        <span class="mobile-nav-icon">◷</span>
+        <span class="mobile-nav-text">今天</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-view="stats" type="button" aria-label="回看">
+        <span class="mobile-nav-icon">↺</span>
+        <span class="mobile-nav-text">回看</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-view="review" type="button" aria-label="需要我判断">
+        <span class="mobile-nav-icon">✓</span>
+        <span class="mobile-nav-text">需要我判断</span>
+      </button>
+      <button class="mobile-nav-btn" data-mobile-view="more" type="button" aria-label="更多">
+        <span class="mobile-nav-icon">⋯</span>
+        <span class="mobile-nav-text">更多</span>
+        <span id="mobile-hub-badge" class="nav-badge hidden">0</span>
+      </button>
+    </nav>
+  </div>
+  <section id="inline-viewer-workspace" class="inline-viewer-workspace hidden" aria-label="Life Logger 结果工作区">
+    <header class="inline-viewer-bar">
+      <button id="inline-viewer-close" class="inline-viewer-back" type="button" tabindex="-1">← 返回 Life Logger</button>
+      <div>
+        <span>当前页面内查看</span>
+        <strong id="inline-viewer-label">结果与复核</strong>
+        <span id="inline-viewer-loading" class="inline-viewer-loading" role="status">正在载入…</span>
+      </div>
+      <button id="inline-viewer-open-tab" class="inline-viewer-external" type="button">需要时新标签打开 ↗</button>
+    </header>
+    <iframe id="inline-viewer-frame" class="inline-viewer-frame" title="Life Logger 结果与人工复核"></iframe>
+  </section>
+  <aside id="diagnostic-error-panel" class="diagnostic-error-panel hidden" role="alert" aria-live="assertive">
+    <div class="diagnostic-error-head">
+      <div>
+        <span id="diagnostic-error-context">错误诊断</span>
+        <strong id="diagnostic-error-title">Life Logger 发生错误</strong>
+        <p id="diagnostic-error-summary"></p>
+      </div>
+      <button id="diagnostic-close" class="diagnostic-close" type="button" aria-label="关闭错误提示">×</button>
+    </div>
+    <div class="diagnostic-error-actions">
+      <button id="diagnostic-copy-raw" class="setting-action" type="button">复制错误</button>
+      <button id="diagnostic-copy-agent" class="setting-action primary-action" type="button">复制给 Agent</button>
+    </div>
+    <details class="diagnostic-error-detail">
+      <summary>查看完整诊断</summary>
+      <pre id="diagnostic-error-details"></pre>
+    </details>
+  </aside>
+  <div id="access-token-overlay" class="access-token-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="access-token-title" aria-describedby="access-token-description">
+    <div class="access-token-card">
+      <p class="section-kicker">LOCAL ACCESS</p>
+      <h2 id="access-token-title">输入 Life Logger 访问令牌</h2>
+      <p id="access-token-description">API 默认不允许匿名访问。桌面端正常启动会自动配对；手机首次访问可粘贴“移动访问”设置页里的令牌。</p>
+      <input id="access-token-input" type="password" autocomplete="off" placeholder="访问令牌" aria-label="Life Logger 访问令牌" aria-describedby="access-token-status">
+      <button id="access-token-submit" class="setting-action primary-action" type="button">使用令牌进入</button>
+      <p id="access-token-status" class="setting-status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+  </div>
+  <div id="onboarding-overlay" class="onboarding-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="onboarding-title" aria-describedby="onboarding-description">
+    <div class="onboarding-card">
+      <div class="onboarding-top"><span>首次设置</span><button id="close-onboarding" type="button" aria-label="关闭">×</button></div>
+      <div class="onboarding-copy">
+        <p class="section-kicker">WELCOME TO LIFE LOGGER</p>
+        <h2 id="onboarding-title">先选一个处理方案</h2>
+        <p id="onboarding-description">不用先理解模型。你可以直接用推荐方案，之后随时在设置里修改。</p>
+      </div>
+      <div class="onboarding-plan recommended">
+        <div class="onboarding-plan-head"><div><span class="recommend-badge">推荐</span><strong>平衡 · 本地优先</strong></div><span>适合大多数人</span></div>
+        <div class="onboarding-flow"><span>本机推荐 ASR</span><i>→</i><span>CAM++</span><i>→</i><span>本地事件提取</span></div>
+        <ul><li>中文长录音优先</li><li>录音和转写留在本机</li><li>无需额外账号即可开始</li></ul>
+      </div>
+      <div class="onboarding-actions">
+        <button id="onboarding-custom" class="setting-action" type="button">自己选择模型</button>
+        <button id="onboarding-recommended" class="setting-action primary-action" type="button">使用推荐方案并开始</button>
+      </div>
+    </div>
+  </div>
+  <script src="/timeline-data.js"></script>
+  <script src="/journal_logic.js"></script>
+  <script src="/expense-drilldown.js"></script>
+  <script src="/app.js?v=1793001500"></script>
+  <script>
+  /* [2026-11-02 M5] 内联查看器单一滚动源：把 iframe 高度同步成内容高度，
+     让父页只有一个滚动条（原先 iframe 固定高 + 内部 overflow:hidden = 内容被裁）。
+     同源页面，直接读 contentDocument，不需要 postMessage。 */
+  (function () {
+    var frame = null;
+    var ro = null;
+    var workspace = null;
+
+    /* [2026-11-02 M10] 就绪态：只有真实文档 load 之后才显示 iframe（.is-ready），
+       未就绪时保留同色画布 + 栏内「正在载入…」，避免 about:blank 白底闪一下。 */
+    function setFrameReady(ready) {
+      if (frame) frame.classList.toggle('is-ready', !!ready);
+      if (workspace) workspace.classList.toggle('is-loading', !ready);
+    }
+
+    function hasRealSrc() {
+      var src = frame && frame.getAttribute('src');
+      return !!src && src !== 'about:blank';
+    }
+
+    function contentHeight(el) {
+      try {
+        var d = el.contentDocument;
+        if (!d || !d.documentElement) return 0;
+        return Math.max(d.documentElement.scrollHeight, d.body ? d.body.scrollHeight : 0);
+      } catch (e) { return 0; }
+    }
+
+    function sync() {
+      if (!frame || !document.body.classList.contains('inline-viewer-open')) return;
+      var h = contentHeight(frame);
+      if (h > 0 && Math.abs((parseFloat(frame.style.height) || 0) - h) > 1) {
+        frame.style.height = h + 'px';
+      }
+    }
+
+    function bind() {
+      frame = document.getElementById('inline-viewer-frame');
+      workspace = document.getElementById('inline-viewer-workspace');
+      if (!frame) return;
+      setFrameReady(false);            // 初始无 src / about:blank：视为未就绪
+      frame.addEventListener('load', function () {
+        setFrameReady(hasRealSrc());   // about:blank（关闭后回位）不算就绪
+        sync();
+        [80, 260, 700, 1500].forEach(function (t) { setTimeout(sync, t); });
+        try {
+          if (ro) { ro.disconnect(); ro = null; }
+          var w = frame.contentWindow;
+          var d = frame.contentDocument;
+          if (w && w.ResizeObserver && d && d.body) {
+            ro = new w.ResizeObserver(sync);
+            ro.observe(d.body);
+          }
+        } catch (e) { /* 跨源或未就绪：由下面的定时兜底 */ }
+      });
+      window.addEventListener('resize', sync);
+      // 兜底：内部异步渲染（图表/图片/懒加载）后仍能对齐高度
+      setInterval(sync, 1000);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', bind);
+    } else {
+      bind();
+    }
+  })();
+  </script>
+</body>
+</html>

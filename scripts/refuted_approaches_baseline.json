@@ -1,0 +1,12 @@
+{
+  "_comment": "已证伪方向的「已知存量」清单。登记在这里的命中不判 FAIL，只作为债务列出。新增条目必须写明 why 并关联报告。",
+  "_see": "work/do-not-retry-20261103/REPORT.md",
+  "known": [
+    {
+      "rule": "R4",
+      "file": "src/life_logger/daily_dashboard.py",
+      "pattern": "self 占比判媒体",
+      "why": "2026-10-17 就存在的场景判定（self_ratio<0.2 且文本>40 字 => scene=media），早于 2026-11-03 的证伪实验。按 work/session-vote-v2-20261103/REPORT.md，低 self=>媒体 的 precision 只有 0.56/0.80，这条会漏判约 20-44% 的现场对话。属于待还债务，不是本次新增。"
+    }
+  ]
+}

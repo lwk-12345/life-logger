@@ -1,0 +1,163 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.models/
+*.py[cod]
+*.egg-info/
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+work/*
+local-config.json
+output/local-jobs/
+*.db
+*.sqlite
+*.sqlite3
+
+# Swift / SPM 构建产物（desktop、ios、watchos/CorePackage 下都有；无前导斜杠=任意层级匹配）
+.build/
+DerivedData/
+
+# AirPassport 测试录音落盘目录（scripts/test_air_passport.sh --dump-wav 的输出，非测试夹具）
+recordings_test/
+
+# 三件套台账（planning-with-files，多流并行：life-logger-web / life-logger-watch / airpassport-receiver）
+
+# macOS 本地垃圾文件
+.DS_Store
+**/.DS_Store
+
+# [2026-10-13 体检发现] 工作树里的重量级杂物 —— 之前全都没被忽略，
+# 一次 `git add -A` 就会把 2.9G 塞进历史（.kev 是另一个项目的实验区）。
+.kev/
+watch-rescue/
+watch-rescue2/
+watch-crashlogs/
+
+# 根目录遗留的 Mach-O 二进制（112K，arm64_32；不是本仓库的产物）
+/main
+
+# 运行配置的历次备份（含旧凭证，不该进仓库）
+local-config.json.bak-*
+local-config.json.pre-*
+local-config.json.off
+local-config.json.kev
+
+# 当日时间轴原型页（独立调试页，未纳入版本控制）
+web/daily-timeline-prototype.html
+
+# 基线冻结 2026-10-19：本地备份与 agent 临时目录不入库
+*.bak
+*.bak-*
+.agents/
+.hermes/
+
+# Xcode 用户界面状态（每开一次 Xcode 就变，无信息量）
+*.xcuserstate
+xcuserdata/
+
+# 数据备份产物（backups/），不入库
+backups/
+
+# 运行产物，不入库
+golden/
+
+# Agent Teams 交付物：报告 / 设计 / 验收记录要能进仓库，运行时状态继续忽略。
+# 注意反向规则的坑：父目录被忽略时子文件的 ! 规则无效 —— 必须先 ! 目录本身，
+# 再用子目录通配符重新忽略内容，最后只放行 *.md。
+# work/*（第 12 行）与 agent-board/（下方）仍然吞掉其余一切。
+
+# work/automation-20261023/：DESIGN.md / CONCLUSION.md / EVASION-REPORT.md 是交付物；
+# fakes/（探针夹具，内含 .venv、.pytest_cache）、*.json（探针输入）、gate-runner/ 仍忽略。
+!work/automation-20261023/
+work/automation-20261023/*
+!work/automation-20261023/*.md
+
+# agent-board/：*acceptance.md 是验收记录；gate-report.json 是 gate_runner.py 每跑一次覆盖写的运行状态。
+!agent-board/
+agent-board/*
+!agent-board/*.md
+
+# ─────────────────────────────────────────────────────────────────────────────
+# [2026-10-23 发布安全收口] 密钥 / 日志 / 运行时状态的通用兜底
+# 背景：发布审计发现 agent-board/notify.log 有手机/邮箱样式命中、8 个 src 模块未入库、
+# golden/ 被忽略却已跟踪。以下为"未来任何新文件"都兜得住的通用规则（不针对具体文件名）。
+# 注意：只加通用形状，不写死某个项目路径，避免以后换目录又漏。
+# ─────────────────────────────────────────────────────────────────────────────
+
+# 1) 凭据与密钥材料（永不入库）
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+secrets*.json
+*secrets*.json
+*.secret
+*.credentials
+*_token*.txt
+*token*.json
+!package.json
+!package-lock.json
+
+# 2) 日志与流水（运行态，不是源码）
+*.log
+*.log.[0-9]*
+*.jsonl
+!golden/**/*.jsonl
+
+# 3) 临时/交换/崩溃文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+core.[0-9]*
+*.crash
+
+# 4) agent-board/：只放行验收记录；其余（outbox / queue / 日志 / 运行状态）一律不进
+agent-board/outbox/
+agent-board/queue*.json
+agent-board/*.log
+agent-board/*.jsonl
+agent-board/state*.json
+agent-board/gate-report.json
+# 收紧 .md 白名单：原来 `!agent-board/*.md` 会把任何新写的笔记（可能含 PII）也带进来
+!agent-board/*acceptance.md
+
+# 5) work/ 下的临时产物（虽然 work/* 已忽略，这里显式兜住将来放宽的情况）
+work/**/*.before
+work/**/before/
+work/**/*.tar.gz
+work/**/*.zip
+work/**/.env*
+work/**/secrets*.json
+
+# 杂项备份（总控 2026-11-04）
+1440.json
+web/daily-timeline-live.html.orig
+
+# 含真实原话，脱敏后才能入库（2026-11-04）
+tests/fixtures/
+
+# 用户背景含个人信息，只留本机（2026-11-06）
+config/user-profile.md
+web/coverage-gaps.json
+
+# Open-source safety: never commit personal snapshots, agent planning logs, provisioning profiles, or built apps
+golden/
+.planning/
+work/
+*.mobileprovision
+desktop/**/*.app/
+watchos/**/build/
+.DS_Store
+web/activity-buckets-[0-9]*-[0-9]*-[0-9]*.js

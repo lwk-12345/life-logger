@@ -1,0 +1,4 @@
+build/
+CorePackage/.build/
+CorePackage/.swiftpm/
+LifeLoggerWatch.xcodeproj/xcuserdata/

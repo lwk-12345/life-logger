@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Life Logger · 结果查看</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/viewer.css?v=20261009-1">
+  <style>
+    /* 「跳到主内容」skip link：默认移出视口但仍在 Tab 序，聚焦时滑入。
+       配色沿用站内深色 #27312b / 白字（对比度 > 4.5:1），高度复用 --touch-min。 */
+    .skip-link {
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      z-index: 100;
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--touch-min);
+      padding: 0 16px;
+      border-radius: 10px;
+      background: #27312b;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(27, 35, 30, .24);
+      transform: translateY(-150%);
+      transition: transform .18s ease;
+    }
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: 3px solid #9da7df;
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主内容</a>
+  <main id="main" class="viewer-shell" tabindex="-1">
+    <header class="viewer-header">
+      <div>
+        <a class="back-link" href="/" tabindex="0">← 返回 Life Logger</a>
+        <p class="eyebrow">RESULT VIEWER</p>
+        <h1 id="viewer-title">正在读取结果…</h1>
+        <p id="viewer-subtitle" class="subtitle"></p>
+      </div>
+      <a id="raw-link" class="raw-link" href="#" target="_blank" rel="noopener noreferrer">查看原始文件</a>
+    </header>
+    <section id="toolbar" class="toolbar hidden">
+      <div class="search-box">
+        <input id="search-input" type="search" placeholder="输入一句话或关键词，例如：先做一版简单应用" aria-label="搜索关键词" autocomplete="off">
+        <button id="search-button" class="search-button" type="button">查询</button>
+        <button id="search-clear" class="search-clear hidden" type="button">清除</button>
+      </div>
+      <span id="count-label" class="count-label" role="status" aria-live="polite" aria-atomic="true"></span>
+    </section>
+    <section id="viewer-content" class="viewer-content"><div class="loading">正在整理结果…</div></section>
+  </main>
+  <dialog id="edit-dialog" class="edit-dialog" aria-labelledby="edit-dialog-title" aria-describedby="edit-dialog-help">
+    <form id="edit-form" class="edit-form" method="dialog">
+      <div class="edit-dialog-head">
+        <div><p class="eyebrow">HUMAN CORRECTION</p><h2 id="edit-dialog-title">人工修正</h2></div>
+        <button id="edit-dialog-close" class="edit-dialog-close" type="button" aria-label="关闭">×</button>
+      </div>
+      <p id="edit-dialog-help" class="subtitle"></p>
+      <section id="event-edit-fields" class="edit-fields hidden">
+        <label><span>事件标题</span><input id="edit-event-title" type="text" maxlength="500"></label>
+        <fieldset><legend>分类</legend><div id="edit-event-categories" class="edit-category-grid"></div></fieldset>
+        <label><span>发生时间（ISO 8601）</span><input id="edit-event-time" type="text" placeholder="2026-09-21T18:30:00+08:00"></label>
+        <label><span>消费金额</span><input id="edit-event-amount" type="number" min="0" step="0.01" inputmode="decimal"></label>
+        <label><span>修正备注</span><textarea id="edit-event-note" rows="3" maxlength="4000"></textarea></label>
+      </section>
+      <section id="transcript-edit-fields" class="edit-fields hidden">
+        <div class="edit-original"><span>原始 ASR（只读）</span><p id="edit-original-asr"></p></div>
+        <label><span>正确转写</span><textarea id="edit-corrected-text" rows="6" maxlength="10000"></textarea></label>
+      </section>
+      <p id="edit-error" class="edit-error hidden"></p>
+      <div class="edit-dialog-actions">
+        <button id="edit-cancel" type="button" class="review-button">取消</button>
+        <button id="edit-save" type="submit" class="review-button active">保存修正</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="/viewer.js?v=20261009-1"></script>
+</body>
+</html>
